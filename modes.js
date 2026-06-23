@@ -130,7 +130,7 @@ const Modes = {
             this.bonus.active = false;
             Player.wallet += this.bonus.collected;
             HUD.showMessage('+' + Utils.formatRupees(this.bonus.collected) + ' collected!', '#FFD700');
-            setTimeout(() => Game.nextLevel(), 1500);
+            setTimeout(() => Game.openGarageOrNext(), 1500);
             return;
         }
         this.bonus.cashRainTimer += dt / 60;
@@ -202,7 +202,7 @@ const Modes = {
                 Audio.play('collectCash');
                 this.toll.active = false;
                 this.toll.choiceMade = true;
-                Game.targetScrollSpeed = Levels.currentLevelData ? Levels.currentLevelData.scrollSpeed : 200;
+                Game.targetScrollSpeed = Levels.currentLevelData ? Levels.currentLevelData.scrollSpeed : 100;
                 Game.scrollSpeed = Game.targetScrollSpeed;
                 Obstacles.getActive().forEach(o => { if (o.type === 'tollBarrier') o.active = false; });
             } else if (Player.wallet >= 1000) {
@@ -211,17 +211,17 @@ const Modes = {
                 Audio.play('collectCash');
                 this.toll.active = false;
                 this.toll.choiceMade = true;
-                Game.targetScrollSpeed = Levels.currentLevelData ? Levels.currentLevelData.scrollSpeed : 200;
+                Game.targetScrollSpeed = Levels.currentLevelData ? Levels.currentLevelData.scrollSpeed : 100;
                 Game.scrollSpeed = Game.targetScrollSpeed;
                 Obstacles.getActive().forEach(o => { if (o.type === 'tollBarrier') o.active = false; });
             } else {
                 HUD.showMessage('NEED Rs. 1000!', '#ff4444');
             }
         }
-        if (Player.y < Player.groundY - 20 && Player.velX > 450) {
+        if (Player.y < Player.groundY - 20 && Player.velX > 150) {
             this.toll.active = false;
             this.toll.choiceMade = true;
-            Game.targetScrollSpeed = Levels.currentLevelData ? Levels.currentLevelData.scrollSpeed : 200;
+            Game.targetScrollSpeed = Levels.currentLevelData ? Levels.currentLevelData.scrollSpeed : 100;
             Game.scrollSpeed = Game.targetScrollSpeed;
             Obstacles.getActive().forEach(o => { if (o.type === 'tollBarrier') o.active = false; });
             HUD.showMessage('JUMPED OVER!', '#4CAF50');

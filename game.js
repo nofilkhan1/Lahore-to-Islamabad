@@ -129,18 +129,28 @@ const Game = {
 
         const levelData = Levels.currentLevelData;
         if (levelData) {
-            if (levelData.loadSheddingAt && !this.loadSheddingCompleted && !Modes.loadShedding.active && this.distance >= levelData.loadSheddingAt) {
-                this.loadSheddingCompleted = true;
-                Modes.activateLoadShedding();
+            // Load shedding: triggers repeatedly at intervals
+            if (levelData.loadSheddingAt && !Modes.loadShedding.active) {
+                if (!this.nextLoadSheddingAt) this.nextLoadSheddingAt = levelData.loadSheddingAt;
+                if (this.distance >= this.nextLoadSheddingAt) {
+                    Modes.activateLoadShedding();
+                    this.nextLoadSheddingAt = this.distance + (levelData.loadSheddingInterval || 8000);
+                }
             }
-            if (levelData.isChaseModeActive && !this.chalaanCompleted && !Modes.chalaan.active && this.distance >= (levelData.chalaanStart || 2000)) {
-                this.chalaanCompleted = true;
-                Modes.activateChalaan();
+            // Chalaan: triggers repeatedly at intervals
+            if (levelData.isChaseModeActive && !Modes.chalaan.active) {
+                if (!this.nextChalaanAt) this.nextChalaanAt = levelData.chalaanStart || 3000;
+                if (this.distance >= this.nextChalaanAt) {
+                    Modes.activateChalaan();
+                    this.nextChalaanAt = this.distance + (levelData.chalaanInterval || 8000);
+                }
             }
+            // Toll barrier: single trigger
             if (levelData.hasTollBarrier && !this.tollBarrierSpawned && this.distance >= levelData.tollDistance) {
                 this.tollBarrierSpawned = true;
                 Obstacles.spawnTollBarrier();
             }
+            // Bike key: single trigger
             if (levelData.bikeKeyAt && !this.bikeKeySpawned && this.distance >= levelData.bikeKeyAt && Player.mode === 'foot') {
                 this.bikeKeySpawned = true;
                 Obstacles.spawnBikeKeyAtDistance(levelData.bikeKeyAt);
@@ -307,14 +317,16 @@ const Game = {
         this.state = 'playing';
         this.currentLevel = 0;
         this.distance = 0;
-        this.scrollSpeed = 200;
-        this.targetScrollSpeed = 200;
+        this.scrollSpeed = 100;
+        this.targetScrollSpeed = 100;
         this.nearMissCombo = 0;
         this.nearMissTimer = 0;
         this.tollBarrierSpawned = false;
         this.bikeKeySpawned = false;
         this.chalaanCompleted = false;
         this.loadSheddingCompleted = false;
+        this.nextLoadSheddingAt = 0;
+        this.nextChalaanAt = 0;
         Player.reset();
         Obstacles.reset();
         Levels.loadLevel(0);
@@ -331,13 +343,14 @@ const Game = {
         const levelData = Levels.currentLevelData;
         if (!levelData) return;
         const names = ['Mama\'s Doodh Run', 'Liberty Market Rush', 'Truck Art Gauntlet', 'Jhelum Toll Plaza', 'Signal Sprint', 'Final Climb to Monal'];
+        const dist = levelData.distance;
         const objectives = [
-            'Survive 3000m with Rs. 500',
-            'Survive 3000m — find the bike key!',
-            'Survive 3000m on the highway',
-            'Survive 3500m — pay the toll or jump!',
-            'Survive 3000m through the capital',
-            'Climb 4000m to reach The Monal!',
+            'Survive ' + dist + 'm with Rs. 500',
+            'Survive ' + dist + 'm — find the bike key!',
+            'Survive ' + dist + 'm on the highway',
+            'Survive ' + dist + 'm — pay the toll or jump!',
+            'Survive ' + dist + 'm through the capital',
+            'Climb ' + dist + 'm to reach The Monal!',
         ];
         this.levelIntroText = levelData.city + ' — ' + (names[this.currentLevel] || 'Unknown');
         this.levelIntroSubtext = objectives[this.currentLevel] || '';
@@ -408,14 +421,16 @@ const Game = {
             return;
         }
         this.distance = 0;
-        this.scrollSpeed = 200;
-        this.targetScrollSpeed = 200;
+        this.scrollSpeed = 100;
+        this.targetScrollSpeed = 100;
         this.tollBarrierSpawned = false;
         this.bikeKeySpawned = false;
         this.chalaanCompleted = false;
         this.loadSheddingCompleted = false;
         this.nearMissCombo = 0;
         this.nearMissTimer = 0;
+        this.nextLoadSheddingAt = 0;
+        this.nextChalaanAt = 0;
         Player.resetForNewLevel();
         Obstacles.reset();
         Levels.loadLevel(this.currentLevel);
@@ -456,19 +471,18 @@ const Game = {
         const finalScore = Math.floor(this.distance) + Player.wallet;
         SaveData.addScore(finalScore, this.distance, Player.wallet);
         SaveData.saveGameState();
-        document.getElementById('gameOverStats').innerHTML =
-            'YOU REACHED THE MONAL!<br><br>' +
+        document.getElementById('victoryStats').innerHTML =
             'Distance: ' + Math.floor(this.distance) + ' m<br>' +
             'Wallet: Rs. ' + Utils.formatRupees(Player.wallet) + '<br>' +
             'Score: ' + Utils.formatRupees(finalScore) + '<br><br>' +
             'BOHAT HARD!';
-        document.querySelector('#gameOverScreen .screen-title').textContent = 'VICTORY!';
-        this.showScreen('gameOverScreen');
+        this.showScreen('victoryScreen');
         HUD.hide();
     },
 
     startBonusStage() {
         this.state = 'bonusStage';
+        this.hideAllScreens();
         Modes.startBonusStage();
     },
 
@@ -494,19 +508,36 @@ const Game = {
             this.state = 'menu';
             this.hideAllScreens();
             this.showScreen('startScreen');
+            this.populateHighscore();
             HUD.hide();
         };
-        document.getElementById('btnNextLevel').onclick = () => this.openGarageOrNext();
-        document.getElementById('btnGarageSkip').onclick = () => Modes.closeGarage();
+        document.getElementById('btnNextLevel').onclick = () => this.startBonusStage();
+        document.getElementById('btnGarageContinue').onclick = () => Modes.closeGarage();
         document.getElementById('btnPause').onclick = () => { if (this.state === 'playing') this.pause(); else if (this.state === 'paused') this.resume(); };
         document.getElementById('btnQuit').onclick = () => {
             this.state = 'menu';
             this.hideAllScreens();
             this.showScreen('startScreen');
+            this.populateHighscore();
             HUD.hide();
         };
         document.getElementById('btnMuteStart').onclick = () => this.toggleMute();
         document.getElementById('btnMutePause').onclick = () => this.toggleMute();
+        document.getElementById('btnVictoryRetry').onclick = () => { Audio.resume(); this.startGame(); };
+        document.getElementById('btnVictoryMenu').onclick = () => {
+            this.state = 'menu';
+            this.hideAllScreens();
+            this.showScreen('startScreen');
+            this.populateHighscore();
+            HUD.hide();
+        };
+        this.populateHighscore();
+    },
+
+    populateHighscore() {
+        const hs = SaveData.getHighScore();
+        const el = document.getElementById('highscoreDisplay');
+        if (el) el.textContent = hs > 0 ? 'Best Score: Rs. ' + Utils.formatRupees(hs) : 'Best Score: --';
     },
 
     render() {

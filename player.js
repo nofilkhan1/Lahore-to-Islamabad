@@ -10,11 +10,11 @@ const Player = {
     groundY: 370,
 
     foot: { w: 32, h: 64, speed: 200, jumpForce: -450, gravity: 980, duckH: 32 },
-    bike: { w: 64, h: 54, speed: 500, jumpForce: -350, gravity: 1960 },
+    bike: { w: 64, h: 54, speed: 400, jumpForce: -350, gravity: 1960 },
 
     w: 32, h: 64,
     hearts: 5, maxHearts: 5,
-    wallet: 0, fuel: 100, maxFuel: 100, parchiCount: 0,
+    wallet: 0, fuel: 150, maxFuel: 150, parchiCount: 0,
     ducking: false,
     invincible: false, invincibleTimer: 0,
     flashTimer: 0, flashVisible: true, flashInterval: 0,
@@ -48,7 +48,7 @@ const Player = {
         this.hasBikeKey = false;
         this.w = this.foot.w; this.h = this.foot.h;
         this.hearts = this.maxHearts;
-        this.wallet = 0; this.fuel = 100; this.maxFuel = 100;
+        this.wallet = 0; this.fuel = 150; this.maxFuel = 150;
         this.parchiCount = 0;
         this.ducking = false;
         this.invincible = false; this.invincibleTimer = 0;
@@ -90,8 +90,8 @@ const Player = {
                 this.w = this.bike.w; this.h = this.bike.h;
                 this.groundY = 450 - this.bike.h - 16;
                 this.y = this.groundY;
-                // Increase scroll speed for bike mode (2.5x)
-                Game.targetScrollSpeed = (Levels.currentLevelData ? Levels.currentLevelData.scrollSpeed : 200) * 2.5;
+                // Increase scroll speed for bike mode (1.8x)
+                Game.targetScrollSpeed = (Levels.currentLevelData ? Levels.currentLevelData.scrollSpeed : 100) * 1.8;
                 Game.scrollSpeed = Game.targetScrollSpeed;
             }
             return;
@@ -209,7 +209,7 @@ const Player = {
         if (this.chaiActive) { this.chaiTimer -= dt / 60; if (this.chaiTimer <= 0) this.chaiActive = false; }
 
         if (this.mode === 'bike') {
-            this.fuel -= 5 * (dt / 60);
+            this.fuel -= 3 * (dt / 60);
             if (this.fuel <= 0) { this.fuel = 0; this.demoteToFoot(); HUD.showMessage('FUEL EMPTY!', '#ff4444'); }
         }
 
@@ -246,7 +246,7 @@ const Player = {
         this.invincible = true; this.invincibleTimer = 1.5;
         this.flashTimer = 1.5; this.flashInterval = 0;
         // Restore scroll speed for foot mode
-        Game.targetScrollSpeed = Levels.currentLevelData ? Levels.currentLevelData.scrollSpeed : 200;
+        Game.targetScrollSpeed = Levels.currentLevelData ? Levels.currentLevelData.scrollSpeed : 100;
         Game.scrollSpeed = Game.targetScrollSpeed;
         Audio.play('bikeCrash');
         Particles.emitSmoke(this.x + this.w / 2, this.y);

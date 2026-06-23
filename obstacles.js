@@ -32,10 +32,10 @@ const Obstacles = {
 
     update(dt) {
         const scrollSpeed = Game.scrollSpeed;
-        // Difficulty scaling: spawn rate increases with distance
-        const difficultyMult = Math.max(0.5, 1 - (Game.distance / 5000) * 0.3);
+        // Difficulty scaling: spawn rate increases gradually over longer levels
+        const difficultyMult = Math.max(0.6, 1 - (Game.distance / 12000) * 0.4);
         const currentObstacleInterval = this.obstacleSpawnInterval * difficultyMult;
-        const currentCoinInterval = this.coinSpawnInterval * Math.max(0.6, 1 - (Game.distance / 8000) * 0.2);
+        const currentCoinInterval = this.coinSpawnInterval * Math.max(0.5, 1 - (Game.distance / 15000) * 0.5);
 
         this.obstacleSpawnTimer += dt;
         if (this.obstacleSpawnTimer >= currentObstacleInterval) {
@@ -57,18 +57,21 @@ const Obstacles = {
                 obs.dogStateTimer += dt / 60;
                 const playerDist = Player.x - obs.x;
                 const distAbs = Math.abs(playerDist);
+                const levelData = Levels.currentLevelData;
+                const chaseDuration = (levelData && levelData.dogChaseDuration) || 4;
+                const accelRate = (levelData && levelData.dogAccelRate) || 1.0;
+                const detectRange = 180 + accelRate * 20;
 
                 switch (obs.dogState) {
                     case 'idle':
                         obs.speed = 0;
-                        if (distAbs < 200 && playerDist > 0) {
+                        if (distAbs < detectRange && playerDist > 0) {
                             obs.dogState = 'alert';
                             obs.dogStateTimer = 0;
                             Audio.play('dogBark');
                         }
                         break;
                     case 'alert':
-                        // Dog notices player, barks, prepares to chase
                         if (obs.dogStateTimer > 0.5) {
                             obs.dogState = 'chase';
                             obs.dogStateTimer = 0;
@@ -76,20 +79,17 @@ const Obstacles = {
                         }
                         break;
                     case 'chase':
-                        // Acceleration curve: gradually speed up over 1.5 seconds
-                        obs.dogAccel = Math.min(1, obs.dogAccel + dt / 90);
-                        const chaseSpeed = 100 + obs.dogAccel * 250;
+                        obs.dogAccel = Math.min(1, obs.dogAccel + (dt / 90) * accelRate);
+                        const chaseSpeed = 80 + obs.dogAccel * (200 + accelRate * 80);
                         obs.speed = chaseSpeed;
-                        // Chase for max 4 seconds then tire out
-                        if (obs.dogStateTimer > 4) {
+                        if (obs.dogStateTimer > chaseDuration) {
                             obs.dogState = 'tired';
                             obs.dogStateTimer = 0;
                         }
                         break;
                     case 'tired':
-                        // Slow down and give up
-                        obs.speed = Math.max(0, obs.speed - 80 * (dt / 60));
-                        if (obs.dogStateTimer > 2 || obs.speed <= 0) {
+                        obs.speed = Math.max(0, obs.speed - 60 * (dt / 60));
+                        if (obs.dogStateTimer > 2.5 || obs.speed <= 0) {
                             obs.speed = 0;
                             obs.dogState = 'idle';
                             obs.dogStateTimer = 0;

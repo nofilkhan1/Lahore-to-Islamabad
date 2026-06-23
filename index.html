@@ -340,14 +340,62 @@
 
         /* Start screen */
         #startScreen .screen-title {
-            font-size: 32px;
+            font-size: 28px;
             color: #FFD700;
+            margin-bottom: 2px;
         }
 
         #startScreen .route-text {
             color: #4CAF50;
-            font-size: 16px;
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+
+        #startScreen .story-text {
+            color: #E8B89D;
+            font-size: 11px;
+            line-height: 1.6;
+            max-width: 340px;
+            margin: 6px auto 8px;
+            text-align: center;
+            font-style: italic;
+        }
+
+        #startScreen .controls-box {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 6px;
+            padding: 6px 12px;
+            margin: 4px auto 8px;
+            max-width: 320px;
+        }
+
+        #startScreen .controls-title {
+            color: #FFD700;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
             margin-bottom: 4px;
+        }
+
+        #startScreen .controls-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2px 12px;
+            font-size: 10px;
+            color: #ccc;
+        }
+
+        #startScreen .controls-grid span {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        #startScreen .highscore-text {
+            color: #FFD700;
+            font-size: 11px;
+            margin-bottom: 6px;
         }
 
         /* Game Over screen */
@@ -361,6 +409,26 @@
             margin-bottom: 16px;
             text-align: center;
             line-height: 1.8;
+        }
+
+        /* Victory screen */
+        #victoryScreen .screen-title {
+            color: #FFD700;
+            font-size: 28px;
+        }
+
+        #victoryScreen .stats {
+            color: #E8B89D;
+            font-size: 12px;
+            margin-bottom: 16px;
+            text-align: center;
+            line-height: 1.8;
+        }
+
+        #victoryScreen .subtitle {
+            color: #4CAF50;
+            font-size: 14px;
+            margin-bottom: 8px;
         }
 
         /* Level Complete screen */
@@ -530,8 +598,25 @@
             <div class="route-text">Lahore → GT Road → Islamabad</div>
             <div class="screen-title">LAHORE TO ISLAMABAD</div>
             <div class="screen-subtitle">The Desi Road Trip</div>
+            <div class="story-text">
+                "Beghairat Government ne metro ka budget kha liya hai.
+                Ab sirf ek purani Honda CD 70 hai aur GT Road ka safar.
+                Lahore se Islamabad — 400 km of pure Pakistani chaos."
+            </div>
+            <div class="controls-box">
+                <div class="controls-title">How to Play</div>
+                <div class="controls-grid">
+                    <div><span>← →</span> Move / Accelerate</div>
+                    <div><span>↑ / SPACE</span> Jump</div>
+                    <div><span>↓</span> Duck</div>
+                    <div><span>E</span> Dismount Bike</div>
+                    <div><span>P / ESC</span> Pause</div>
+                    <div><span>M</span> Mute</div>
+                </div>
+            </div>
+            <div class="highscore-text" id="highscoreDisplay">Best Score: --</div>
             <button class="screen-btn" id="btnStart">▶ START GAME</button>
-            <button class="screen-btn secondary" id="btnMuteStart">🔊 Sound: ON</button>
+            <button class="screen-btn secondary" id="btnMuteStart">Sound: ON</button>
         </div>
 
         <!-- PAUSE SCREEN -->
@@ -566,8 +651,21 @@
             <button class="screen-btn" id="btnNextLevel">NEXT LEVEL</button>
         </div>
 
+        <!-- VICTORY SCREEN -->
+        <div class="screen-overlay" id="victoryScreen">
+            <div class="screen-title">VICTORY!</div>
+            <div class="subtitle">Tum Pahunch Gaye The Monal!</div>
+            <div class="stats" id="victoryStats">
+                Distance: 0 m<br>
+                Wallet: Rs. 0<br>
+                Score: 0
+            </div>
+            <button class="screen-btn" id="btnVictoryRetry">PLAY AGAIN</button>
+            <button class="screen-btn secondary" id="btnVictoryMenu">Main Menu</button>
+        </div>
+
         <!-- TRUCK ART GARAGE SCREEN -->
-        <div class="screen-overlay" id="garageScreen" style="display:none;">
+        <div class="screen-overlay" id="garageScreen">
             <div class="screen-title" style="color:#FF6F00;">TRUCK ART GARAGE</div>
             <div class="screen-subtitle">Apni bike sudharo! (Fix your bike)</div>
             <div id="garageUpgrades" style="margin:16px 0; text-align:left; display:inline-block;">
@@ -575,7 +673,7 @@
             </div>
             <div id="garageWallet" style="color:#FFD700; font-size:18px; margin:8px 0;">Wallet: Rs. 0</div>
             <div style="display:flex; gap:10px; justify-content:center; margin-top:12px;">
-                <button class="screen-btn" id="btnGarageSkip" style="background:#666;">SKIP</button>
+                <button class="screen-btn" id="btnGarageContinue">CONTINUE</button>
             </div>
         </div>
 
