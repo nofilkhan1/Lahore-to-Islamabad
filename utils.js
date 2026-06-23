@@ -3,6 +3,8 @@
 // ============================================================
 
 const Utils = {
+    init() {},
+
     // --- AABB Collision Detection ---
     checkAABB(a, b) {
         return (
