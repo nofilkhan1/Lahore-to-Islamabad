@@ -1,5 +1,5 @@
 // ============================================================
-// player.js — Foot mode, bike mode, state machine, physics
+// player.js — Enhanced rendering with detailed character art
 // ============================================================
 
 const Player = {
@@ -21,6 +21,7 @@ const Player = {
     chaiActive: false, chaiTimer: 0,
     mountingBike: false, mountTimer: 0,
     animFrame: 0, animTimer: 0,
+    runCycle: 0,
     facingRight: true,
 
     init() { this.reset(); },
@@ -42,6 +43,7 @@ const Player = {
         this.chaiActive = false; this.chaiTimer = 0;
         this.mountingBike = false; this.mountTimer = 0;
         this.animFrame = 0; this.animTimer = 0;
+        this.runCycle = 0;
     },
 
     resetForNewLevel() {
@@ -113,9 +115,7 @@ const Player = {
         }
 
         const gravity = this.mode === 'bike' ? this.bike.gravity : this.foot.gravity;
-        if (!this.grounded) {
-            this.velY += gravity * (dt / 60);
-        }
+        if (!this.grounded) this.velY += gravity * (dt / 60);
 
         this.x += this.velX * (dt / 60);
         this.y += this.velY * (dt / 60);
@@ -133,40 +133,31 @@ const Player = {
             this.invincibleTimer -= dt / 60;
             this.flashTimer -= dt / 60;
             this.flashInterval += dt / 60;
-            if (this.flashInterval >= 0.08) {
-                this.flashVisible = !this.flashVisible;
-                this.flashInterval = 0;
-            }
-            if (this.invincibleTimer <= 0) {
-                this.invincible = false;
-                this.flashVisible = true;
-            }
+            if (this.flashInterval >= 0.08) { this.flashVisible = !this.flashVisible; this.flashInterval = 0; }
+            if (this.invincibleTimer <= 0) { this.invincible = false; this.flashVisible = true; }
         }
 
-        if (this.chaiActive) {
-            this.chaiTimer -= dt / 60;
-            if (this.chaiTimer <= 0) this.chaiActive = false;
-        }
+        if (this.chaiActive) { this.chaiTimer -= dt / 60; if (this.chaiTimer <= 0) this.chaiActive = false; }
 
         if (this.mode === 'bike') {
             this.fuel -= 5 * (dt / 60);
-            if (this.fuel <= 0) {
-                this.fuel = 0;
-                this.demoteToFoot();
-                HUD.showMessage('FUEL EMPTY!', '#ff4444');
-            }
+            if (this.fuel <= 0) { this.fuel = 0; this.demoteToFoot(); HUD.showMessage('FUEL EMPTY!', '#ff4444'); }
         }
 
         this.animTimer += dt / 60;
-        if (this.animTimer >= 0.15) {
+        if (this.animTimer >= 0.12) {
             this.animTimer = 0;
             this.animFrame = (this.animFrame + 1) % 4;
+            if (Math.abs(this.velX) > 20) this.runCycle = (this.runCycle + 1) % 4;
+        }
+
+        // Emit dust when running on ground
+        if (this.grounded && Math.abs(this.velX) > 100 && Math.random() < 0.3) {
+            Particles.emitDust(this.x, this.groundY + this.h);
         }
     },
 
-    getHitbox() {
-        return { x: this.x, y: this.y, w: this.w, h: this.h };
-    },
+    getHitbox() { return { x: this.x, y: this.y, w: this.w, h: this.h }; },
 
     promoteToBike() {
         if (this.mode === 'bike') return;
@@ -182,24 +173,17 @@ const Player = {
         this.w = this.foot.w; this.h = this.foot.h;
         this.groundY = 450 - this.foot.h - 16;
         this.y = this.groundY;
-        this.invincible = true;
-        this.invincibleTimer = 1.5;
-        this.flashTimer = 1.5;
-        this.flashInterval = 0;
+        this.invincible = true; this.invincibleTimer = 1.5;
+        this.flashTimer = 1.5; this.flashInterval = 0;
         Audio.play('bikeCrash');
+        Particles.emitSmoke(this.x + this.w / 2, this.y);
     },
 
-    activateChaiPower() {
-        this.chaiActive = true;
-        this.chaiTimer = 5;
-    },
+    activateChaiPower() { this.chaiActive = true; this.chaiTimer = 5; },
 
     render(ctx) {
         if (this.invincible && !this.flashVisible) return;
-        if (this.mountingBike) {
-            this.renderFoot(ctx);
-            return;
-        }
+        if (this.mountingBike) { this.renderFoot(ctx); return; }
         if (this.mode === 'foot') this.renderFoot(ctx);
         else this.renderBike(ctx);
     },
@@ -207,71 +191,234 @@ const Player = {
     renderFoot(ctx) {
         const x = Math.round(this.x);
         const y = Math.round(this.y);
+        const f = this.runCycle;
+        const moving = Math.abs(this.velX) > 20;
+
+        // Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.2)';
+        ctx.beginPath();
+        ctx.ellipse(x + 16, this.groundY + this.h + 2, 14, 3, 0, 0, Math.PI * 2);
+        ctx.fill();
+
         if (this.ducking) {
-            ctx.fillStyle = '#E8E0D0';
-            ctx.fillRect(x + 4, y + 4, 24, 20);
-            ctx.fillStyle = '#E8B89D';
-            ctx.fillRect(x + 8, y, 16, 12);
-            ctx.fillStyle = '#2C1810';
-            ctx.fillRect(x + 8, y, 16, 5);
-        } else {
-            ctx.fillStyle = '#E8E0D0';
-            ctx.fillRect(x + 6, y + 40, 8, 20);
-            ctx.fillRect(x + 18, y + 40, 8, 20);
-            ctx.fillStyle = '#8B4513';
-            ctx.fillRect(x + 4, y + 56, 12, 6);
-            ctx.fillRect(x + 16, y + 56, 12, 6);
+            // Ducking pose - compact crouch
             ctx.fillStyle = '#F5F5DC';
-            ctx.fillRect(x + 4, y + 16, 24, 26);
-            ctx.fillStyle = '#556B2F';
-            ctx.fillRect(x + 22, y + 18, 10, 18);
+            ctx.fillRect(x + 2, y + 8, 28, 18);
             ctx.fillStyle = '#E8B89D';
-            ctx.fillRect(x, y + 20, 6, 14);
-            ctx.fillRect(x + 26, y + 20, 6, 14);
-            ctx.fillStyle = '#E8B89D';
-            ctx.fillRect(x + 8, y, 16, 18);
+            ctx.fillRect(x + 10, y + 2, 12, 10);
             ctx.fillStyle = '#2C1810';
-            ctx.fillRect(x + 6, y, 20, 8);
-            if (this.chaiActive) {
-                ctx.fillStyle = 'rgba(255, 152, 0, 0.3)';
-                ctx.fillRect(x - 4, y - 4, this.w + 8, this.h + 8);
-            }
+            ctx.fillRect(x + 8, y, 16, 6);
+            ctx.fillStyle = '#556B2F';
+            ctx.fillRect(x + 24, y + 10, 8, 12);
+            return;
+        }
+
+        // Legs (shalwar - white loose pants)
+        const legOffset = moving ? Math.sin(f * Math.PI / 2) * 3 : 0;
+        ctx.fillStyle = '#E8E0D0';
+        ctx.fillRect(x + 6, y + 42, 8, 18 + legOffset);
+        ctx.fillRect(x + 18, y + 42, 8, 18 - legOffset);
+
+        // Sandals (chappal)
+        ctx.fillStyle = '#8B4513';
+        ctx.fillRect(x + 4, y + 58 + legOffset, 12, 5);
+        ctx.fillRect(x + 16, y + 58 - legOffset, 12, 5);
+        ctx.fillStyle = '#A0522D';
+        ctx.fillRect(x + 6, y + 58 + legOffset, 8, 2);
+        ctx.fillRect(x + 18, y + 58 - legOffset, 8, 2);
+
+        // Body (kameez - cream/off-white tunic)
+        ctx.fillStyle = '#F5F5DC';
+        ctx.fillRect(x + 3, y + 18, 26, 26);
+        // Kameez collar
+        ctx.fillStyle = '#EDE8D0';
+        ctx.fillRect(x + 10, y + 16, 12, 4);
+
+        // Collar detail (shalwar kameez neckline)
+        ctx.fillStyle = '#D4CDB8';
+        ctx.fillRect(x + 13, y + 16, 6, 2);
+
+        // Backpack
+        ctx.fillStyle = '#3D5C2E';
+        ctx.fillRect(x + 24, y + 20, 8, 16);
+        ctx.fillStyle = '#4A6E35';
+        ctx.fillRect(x + 25, y + 21, 6, 14);
+        ctx.fillStyle = '#5C3317';
+        ctx.fillRect(x + 24, y + 20, 8, 2);
+
+        // Arms
+        const armSwing = moving ? Math.sin(f * Math.PI / 2) * 4 : 0;
+        ctx.fillStyle = '#E8B89D';
+        ctx.fillRect(x - 1, y + 22 + armSwing, 5, 12);
+        ctx.fillRect(x + 28, y + 22 - armSwing, 5, 12);
+
+        // Head
+        ctx.fillStyle = '#E8B89D';
+        ctx.fillRect(x + 8, y, 16, 16);
+
+        // Hair
+        ctx.fillStyle = '#2C1810';
+        ctx.fillRect(x + 6, y - 2, 20, 8);
+        ctx.fillRect(x + 6, y, 2, 6);
+
+        // Eyes
+        ctx.fillStyle = '#1A1A1A';
+        ctx.fillRect(x + 14, y + 5, 2, 3);
+        ctx.fillRect(x + 18, y + 5, 2, 3);
+
+        // Eyebrows
+        ctx.fillRect(x + 13, y + 4, 4, 1);
+        ctx.fillRect(x + 17, y + 4, 4, 1);
+
+        // Chai power-up glow
+        if (this.chaiActive) {
+            const glow = Math.sin(Date.now() * 0.01) * 0.1 + 0.25;
+            ctx.fillStyle = 'rgba(255, 152, 0, ' + glow + ')';
+            ctx.fillRect(x - 6, y - 6, this.w + 12, this.h + 12);
         }
     },
 
     renderBike(ctx) {
         const x = Math.round(this.x);
         const y = Math.round(this.y);
-        ctx.fillStyle = '#333333';
-        ctx.fillRect(x + 10, y + 15, 44, 4);
-        ctx.fillStyle = '#444444';
-        ctx.fillRect(x + 18, y + 10, 28, 14);
-        ctx.fillStyle = '#5C3317';
-        ctx.fillRect(x + 12, y + 8, 16, 6);
-        ctx.fillStyle = '#222222';
-        ctx.fillRect(x + 4, y + 32, 16, 16);
-        ctx.fillRect(x + 44, y + 32, 16, 16);
-        ctx.fillStyle = '#C0C0C0';
-        ctx.fillRect(x + 10, y + 36, 4, 8);
-        ctx.fillRect(x + 50, y + 36, 4, 8);
-        ctx.fillStyle = '#C0C0C0';
-        ctx.fillRect(x + 48, y + 4, 6, 12);
-        ctx.fillStyle = '#FFFF00';
-        ctx.fillRect(x + 54, y + 8, 4, 4);
-        ctx.fillStyle = '#F5F5DC';
-        ctx.fillRect(x + 16, y - 4, 20, 16);
-        ctx.fillStyle = '#E8B89D';
-        ctx.fillRect(x + 20, y - 14, 14, 12);
-        ctx.fillStyle = '#2C1810';
-        ctx.fillRect(x + 18, y - 14, 18, 6);
-        if (this.chaiActive) {
-            ctx.fillStyle = 'rgba(255, 152, 0, 0.3)';
-            ctx.fillRect(x - 4, y - 4, this.w + 8, this.h + 8);
+        const wheelSpin = (Date.now() / 50) % 8;
+
+        // Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.25)';
+        ctx.beginPath();
+        ctx.ellipse(x + 32, this.groundY + this.h + 3, 28, 4, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // === BIKE (Honda CD 70 style) ===
+
+        // Rear wheel
+        ctx.fillStyle = '#1A1A1A';
+        ctx.beginPath();
+        ctx.arc(x + 14, y + 40, 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#333';
+        ctx.beginPath();
+        ctx.arc(x + 14, y + 40, 6, 0, Math.PI * 2);
+        ctx.fill();
+        // Spokes
+        ctx.strokeStyle = '#888';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 4; i++) {
+            const angle = (wheelSpin + i * 2) * 0.4;
+            ctx.beginPath();
+            ctx.moveTo(x + 14, y + 40);
+            ctx.lineTo(x + 14 + Math.cos(angle) * 8, y + 40 + Math.sin(angle) * 8);
+            ctx.stroke();
         }
+
+        // Front wheel
+        ctx.fillStyle = '#1A1A1A';
+        ctx.beginPath();
+        ctx.arc(x + 50, y + 40, 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#333';
+        ctx.beginPath();
+        ctx.arc(x + 50, y + 40, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#888';
+        for (let i = 0; i < 4; i++) {
+            const angle = (wheelSpin + i * 2) * 0.4;
+            ctx.beginPath();
+            ctx.moveTo(x + 50, y + 40);
+            ctx.lineTo(x + 50 + Math.cos(angle) * 8, y + 40 + Math.sin(angle) * 8);
+            ctx.stroke();
+        }
+
+        // Frame (black body)
+        ctx.fillStyle = '#2A2A2A';
+        ctx.fillRect(x + 10, y + 20, 44, 4);
+        ctx.fillRect(x + 14, y + 16, 8, 8);
+
+        // Engine block
+        ctx.fillStyle = '#555';
+        ctx.fillRect(x + 18, y + 22, 16, 10);
+        ctx.fillStyle = '#666';
+        ctx.fillRect(x + 19, y + 23, 14, 3);
+
+        // Fuel tank
+        ctx.fillStyle = '#CC0000';
+        ctx.fillRect(x + 16, y + 10, 20, 10);
+        ctx.fillStyle = '#DD2222';
+        ctx.fillRect(x + 18, y + 12, 16, 4);
+        // Honda logo stripe
+        ctx.fillStyle = '#FFD700';
+        ctx.fillRect(x + 20, y + 14, 12, 2);
+
+        // Seat
+        ctx.fillStyle = '#1A1A1A';
+        ctx.fillRect(x + 8, y + 8, 14, 6);
+        ctx.fillStyle = '#2A2A2A';
+        ctx.fillRect(x + 9, y + 9, 12, 3);
+
+        // Exhaust pipe
+        ctx.fillStyle = '#888';
+        ctx.fillRect(x + 2, y + 26, 12, 3);
+        ctx.fillStyle = '#999';
+        ctx.fillRect(x + 2, y + 27, 3, 2);
+
+        // Handlebar
+        ctx.fillStyle = '#C0C0C0';
+        ctx.fillRect(x + 50, y + 4, 4, 14);
+        ctx.fillStyle = '#888';
+        ctx.fillRect(x + 46, y + 4, 12, 3);
+
+        // Headlight
+        ctx.fillStyle = '#FFFF88';
+        ctx.fillRect(x + 54, y + 8, 4, 5);
+        if (this.fuel > 20 || Math.floor(Date.now() / 300) % 2 === 0) {
+            ctx.fillStyle = 'rgba(255, 255, 150, 0.4)';
+            ctx.beginPath();
+            ctx.moveTo(x + 58, y + 10);
+            ctx.lineTo(x + 70, y + 6);
+            ctx.lineTo(x + 70, y + 14);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // === RIDER ===
+
+        // Body (kameez on bike)
+        ctx.fillStyle = '#F5F5DC';
+        ctx.fillRect(x + 14, y - 6, 20, 18);
+
+        // Backpack
+        ctx.fillStyle = '#3D5C2E';
+        ctx.fillRect(x + 10, y - 4, 6, 12);
+
+        // Arms reaching to handlebar
+        ctx.fillStyle = '#E8B89D';
+        ctx.fillRect(x + 34, y + 2, 10, 4);
+
+        // Head
+        ctx.fillStyle = '#E8B89D';
+        ctx.fillRect(x + 18, y - 16, 14, 12);
+
+        // Hair
+        ctx.fillStyle = '#2C1810';
+        ctx.fillRect(x + 16, y - 18, 18, 7);
+
+        // Eyes
+        ctx.fillStyle = '#1A1A1A';
+        ctx.fillRect(x + 24, y - 12, 2, 2);
+        ctx.fillRect(x + 28, y - 12, 2, 2);
+
+        // Chai power-up glow
+        if (this.chaiActive) {
+            const glow = Math.sin(Date.now() * 0.01) * 0.1 + 0.25;
+            ctx.fillStyle = 'rgba(255, 152, 0, ' + glow + ')';
+            ctx.fillRect(x - 6, y - 22, this.w + 12, this.h + 12);
+        }
+
+        // Low fuel warning
         if (this.fuel < 20 && this.fuel > 0) {
             if (Math.floor(Date.now() / 200) % 2 === 0) {
-                ctx.fillStyle = 'rgba(255, 0, 0, 0.2)';
-                ctx.fillRect(x - 2, y - 2, this.w + 4, this.h + 4);
+                ctx.fillStyle = 'rgba(255, 0, 0, 0.15)';
+                ctx.fillRect(x - 4, y - 22, this.w + 8, this.h + 8);
             }
         }
     },

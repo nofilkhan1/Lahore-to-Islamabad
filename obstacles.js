@@ -158,48 +158,218 @@ const Obstacles = {
     renderObstacle(ctx, obs) {
         const x = Math.round(obs.x);
         const y = Math.round(obs.y);
+
+        // Shadow for all obstacles
+        ctx.fillStyle = 'rgba(0,0,0,0.15)';
+        ctx.beginPath();
+        ctx.ellipse(x + obs.w / 2, y + obs.h + 2, obs.w / 3, 2, 0, 0, Math.PI * 2);
+        ctx.fill();
+
         switch (obs.type) {
             case 'dog':
-                ctx.fillStyle = '#8B6914'; ctx.fillRect(x + 4, y + 4, 28, 16);
-                ctx.fillStyle = '#7A5C12'; ctx.fillRect(x + 28, y, 12, 12);
-                ctx.fillStyle = '#FF0000'; ctx.fillRect(x + 34, y + 3, 3, 3);
+                // Body
+                ctx.fillStyle = '#A0782C';
+                ctx.fillRect(x + 4, y + 6, 28, 14);
+                // Belly (lighter)
+                ctx.fillStyle = '#C4956A';
+                ctx.fillRect(x + 8, y + 14, 20, 6);
+                // Head
+                ctx.fillStyle = '#8B6914';
+                ctx.fillRect(x + 28, y + 2, 12, 12);
+                // Snout
+                ctx.fillStyle = '#C4956A';
+                ctx.fillRect(x + 36, y + 6, 6, 4);
+                // Nose
+                ctx.fillStyle = '#1A1A1A';
+                ctx.fillRect(x + 40, y + 6, 3, 2);
+                // Eye (red angry)
+                ctx.fillStyle = '#FF0000';
+                ctx.fillRect(x + 32, y + 4, 3, 3);
+                // Pupil
+                ctx.fillStyle = '#880000';
+                ctx.fillRect(x + 33, y + 5, 1, 1);
+                // Ears
+                ctx.fillStyle = '#6B4F12';
+                ctx.fillRect(x + 28, y, 5, 5);
+                ctx.fillRect(x + 35, y, 5, 5);
+                // Legs
+                ctx.fillStyle = '#7A5C12';
+                ctx.fillRect(x + 6, y + 20, 3, 8);
+                ctx.fillRect(x + 12, y + 20, 3, 8);
+                ctx.fillRect(x + 22, y + 20, 3, 8);
+                ctx.fillRect(x + 30, y + 20, 3, 8);
+                // Paws
                 ctx.fillStyle = '#5C4033';
-                ctx.fillRect(x + 6, y + 20, 4, 8); ctx.fillRect(x + 14, y + 20, 4, 8);
-                ctx.fillRect(x + 22, y + 20, 4, 8); ctx.fillRect(x + 30, y + 20, 4, 8);
+                ctx.fillRect(x + 5, y + 26, 5, 2);
+                ctx.fillRect(x + 11, y + 26, 5, 2);
+                ctx.fillRect(x + 21, y + 26, 5, 2);
+                ctx.fillRect(x + 29, y + 26, 5, 2);
+                // Tail
+                ctx.fillStyle = '#8B6914';
+                ctx.fillRect(x, y + 4, 6, 3);
                 break;
+
             case 'gutter':
-                ctx.fillStyle = '#1A1A1A'; ctx.fillRect(x, y, 48, 16);
-                ctx.fillStyle = '#666666'; ctx.fillRect(x, y, 48, 3); ctx.fillRect(x, y + 13, 48, 3);
+                // Open pit
+                ctx.fillStyle = '#0A0A0A';
+                ctx.fillRect(x + 2, y + 2, 44, 12);
+                // Broken concrete edges
+                ctx.fillStyle = '#888';
+                ctx.fillRect(x, y, 48, 3);
+                ctx.fillRect(x, y + 13, 48, 3);
+                // Cracks
+                ctx.fillStyle = '#666';
+                ctx.fillRect(x + 10, y, 2, 3);
+                ctx.fillRect(x + 30, y + 13, 2, 3);
+                // Slime/water at bottom
+                ctx.fillStyle = '#2D5A1E';
+                ctx.fillRect(x + 6, y + 10, 12, 3);
+                ctx.fillStyle = '#3D7A2E';
+                ctx.fillRect(x + 26, y + 11, 10, 2);
                 break;
+
             case 'rickshaw':
-                ctx.fillStyle = '#FFD700'; ctx.fillRect(x + 8, y, 40, 12);
-                ctx.fillStyle = '#228B22'; ctx.fillRect(x + 10, y + 10, 36, 24);
-                ctx.fillStyle = '#333333';
-                ctx.fillRect(x + 4, y + 32, 10, 10); ctx.fillRect(x + 42, y + 32, 10, 10);
-                break;
-            case 'carelessBike':
-                ctx.fillStyle = '#CC0000'; ctx.fillRect(x + 8, y + 12, 24, 4);
-                ctx.fillStyle = '#AA0000'; ctx.fillRect(x + 12, y + 6, 16, 10);
-                ctx.fillStyle = '#222222';
-                ctx.fillRect(x + 2, y + 24, 10, 10); ctx.fillRect(x + 28, y + 24, 10, 10);
-                ctx.fillStyle = '#E8B89D'; ctx.fillRect(x + 14, y - 4, 10, 10);
-                break;
-            case 'speedCamera':
-                ctx.fillStyle = '#888888'; ctx.fillRect(x + 10, y, 4, 36);
-                ctx.fillStyle = '#F0F0F0'; ctx.fillRect(x, y, 24, 16);
-                ctx.fillStyle = '#333333'; ctx.fillRect(x + 8, y + 4, 8, 8);
-                ctx.fillStyle = '#FF0000'; ctx.fillRect(x + 18, y + 2, 4, 4);
-                break;
-            case 'tollBarrier':
-                for (let i = 0; i < 4; i++) {
-                    ctx.fillStyle = i % 2 === 0 ? '#CC0000' : '#FFD700';
-                    ctx.fillRect(x, y + i * 10, 200, 10);
+                // Canopy/roof (colorful)
+                ctx.fillStyle = '#FFD700';
+                ctx.fillRect(x + 6, y, 44, 10);
+                ctx.fillStyle = '#FF6600';
+                ctx.fillRect(x + 8, y + 2, 40, 6);
+                // Canopy fringe
+                ctx.fillStyle = '#FF0066';
+                for (let i = 0; i < 8; i++) {
+                    ctx.fillRect(x + 8 + i * 5, y + 8, 3, 4);
                 }
-                ctx.fillStyle = '#666666'; ctx.fillRect(x + 90, y + 40, 20, 16);
+                // Body (green/yellow typical Qingqi)
+                ctx.fillStyle = '#228B22';
+                ctx.fillRect(x + 8, y + 10, 40, 22);
+                // Windows
+                ctx.fillStyle = '#87CEEB';
+                ctx.fillRect(x + 10, y + 12, 10, 8);
+                ctx.fillRect(x + 24, y + 12, 10, 8);
+                // Seat visible through window
+                ctx.fillStyle = '#8B4513';
+                ctx.fillRect(x + 11, y + 18, 8, 3);
+                ctx.fillRect(x + 25, y + 18, 8, 3);
+                // Wheels
+                ctx.fillStyle = '#1A1A1A';
+                ctx.beginPath();
+                ctx.arc(x + 10, y + 36, 6, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(x + 46, y + 36, 6, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#666';
+                ctx.beginPath();
+                ctx.arc(x + 10, y + 36, 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(x + 46, y + 36, 2, 0, Math.PI * 2);
+                ctx.fill();
+                // Driver silhouette
+                ctx.fillStyle = '#1A1A1A';
+                ctx.fillRect(x + 38, y + 14, 8, 12);
+                // Rear wheel
+                ctx.fillStyle = '#1A1A1A';
+                ctx.beginPath();
+                ctx.arc(x + 28, y + 38, 5, 0, Math.PI * 2);
+                ctx.fill();
                 break;
+
+            case 'carelessBike':
+                // Frame
+                ctx.fillStyle = '#CC0000';
+                ctx.fillRect(x + 8, y + 14, 24, 3);
+                // Engine
+                ctx.fillStyle = '#444';
+                ctx.fillRect(x + 14, y + 16, 12, 6);
+                // Seat
+                ctx.fillStyle = '#1A1A1A';
+                ctx.fillRect(x + 8, y + 10, 12, 5);
+                // Fuel tank
+                ctx.fillStyle = '#BB0000';
+                ctx.fillRect(x + 14, y + 8, 10, 6);
+                // Exhaust
+                ctx.fillStyle = '#777';
+                ctx.fillRect(x + 2, y + 20, 10, 3);
+                // Wheels
+                ctx.fillStyle = '#1A1A1A';
+                ctx.beginPath();
+                ctx.arc(x + 6, y + 28, 7, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(x + 34, y + 28, 7, 0, Math.PI * 2);
+                ctx.fill();
+                // Handlebar
+                ctx.fillStyle = '#888';
+                ctx.fillRect(x + 32, y + 6, 4, 10);
+                // Rider body
+                ctx.fillStyle = '#333';
+                ctx.fillRect(x + 12, y - 2, 14, 12);
+                // Rider head
+                ctx.fillStyle = '#E8B89D';
+                ctx.fillRect(x + 14, y - 10, 10, 10);
+                // Hair (no helmet!)
+                ctx.fillStyle = '#1A1A1A';
+                ctx.fillRect(x + 13, y - 12, 12, 5);
+                // Eyes
+                ctx.fillStyle = '#000';
+                ctx.fillRect(x + 18, y - 6, 2, 2);
+                break;
+
+            case 'speedCamera':
+                // Pole
+                ctx.fillStyle = '#777';
+                ctx.fillRect(x + 10, y + 12, 4, 24);
+                ctx.fillStyle = '#555';
+                ctx.fillRect(x + 8, y + 32, 8, 4);
+                // Camera box
+                ctx.fillStyle = '#E8E8E8';
+                ctx.fillRect(x, y, 24, 14);
+                ctx.fillStyle = '#D0D0D0';
+                ctx.fillRect(x + 2, y + 2, 20, 10);
+                // Lens
+                ctx.fillStyle = '#1A1A1A';
+                ctx.fillRect(x + 6, y + 3, 8, 8);
+                ctx.fillStyle = '#333';
+                ctx.fillRect(x + 8, y + 5, 4, 4);
+                // Flash
+                const flashOn = Math.floor(Date.now() / 500) % 2 === 0;
+                ctx.fillStyle = flashOn ? '#FF0000' : '#660000';
+                ctx.fillRect(x + 18, y + 2, 4, 4);
+                // Warning label
+                ctx.fillStyle = '#FFD700';
+                ctx.fillRect(x + 2, y + 12, 20, 2);
+                break;
+
+            case 'tollBarrier':
+                // Boom barrier stripes
+                for (let i = 0; i < 5; i++) {
+                    ctx.fillStyle = i % 2 === 0 ? '#CC0000' : '#FFD700';
+                    ctx.fillRect(x, y + i * 8, 200, 8);
+                }
+                // Metal pole
+                ctx.fillStyle = '#555';
+                ctx.fillRect(x + 92, y + 40, 16, 16);
+                ctx.fillStyle = '#666';
+                ctx.fillRect(x + 94, y + 42, 12, 12);
+                // Warning light on top
+                ctx.fillStyle = '#FF0000';
+                ctx.fillRect(x + 96, y + 36, 8, 4);
+                break;
+
             case 'overheadWires':
-                ctx.fillStyle = '#333333'; ctx.fillRect(x, y, 200, 3);
-                ctx.fillStyle = '#444444'; ctx.fillRect(x, y + 3, 200, 3);
+                // Cable bundle (messy Pakistani wires)
+                ctx.fillStyle = '#222';
+                ctx.fillRect(x, y, 200, 2);
+                ctx.fillStyle = '#333';
+                ctx.fillRect(x, y + 2, 200, 2);
+                ctx.fillStyle = '#444';
+                ctx.fillRect(x + 20, y - 1, 200, 2);
+                ctx.fillStyle = '#2A2A2A';
+                ctx.fillRect(x + 40, y + 4, 180, 1);
+                // Hanging droop
+                ctx.fillStyle = '#333';
+                ctx.fillRect(x + 60, y + 3, 40, 2);
                 break;
         }
     },
@@ -207,36 +377,114 @@ const Obstacles = {
     renderCoin(ctx, coin) {
         const x = Math.round(coin.x);
         const y = Math.round(coin.y);
+        const bob = Math.sin(coin.bobTimer * 3) * 2;
+
+        // Sparkle glow for all collectibles
+        ctx.fillStyle = 'rgba(255, 215, 0, 0.15)';
+        ctx.beginPath();
+        ctx.arc(x + coin.w / 2, y + coin.h / 2 + bob, 12, 0, Math.PI * 2);
+        ctx.fill();
+
         switch (coin.type) {
             case 'cash10':
-                ctx.fillStyle = '#4CAF50'; ctx.fillRect(x, y, 12, 16);
-                ctx.fillStyle = '#fff'; ctx.fillRect(x + 3, y + 5, 6, 2);
+                ctx.fillStyle = '#4CAF50';
+                ctx.fillRect(x, y + bob, 12, 16);
+                ctx.fillStyle = '#66BB6A';
+                ctx.fillRect(x + 1, y + 1 + bob, 10, 14);
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(x + 3, y + 5 + bob, 6, 2);
+                ctx.fillRect(x + 5, y + 3 + bob, 2, 6);
                 break;
             case 'cash50':
-                ctx.fillStyle = '#388E3C'; ctx.fillRect(x, y, 12, 16);
-                ctx.fillStyle = '#fff'; ctx.fillRect(x + 2, y + 5, 8, 2);
+                ctx.fillStyle = '#388E3C';
+                ctx.fillRect(x, y + bob, 12, 16);
+                ctx.fillStyle = '#4CAF50';
+                ctx.fillRect(x + 1, y + 1 + bob, 10, 14);
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(x + 2, y + 5 + bob, 8, 2);
+                ctx.fillRect(x + 4, y + 3 + bob, 4, 6);
                 break;
             case 'cash100':
-                ctx.fillStyle = '#2E7D32'; ctx.fillRect(x, y, 12, 16);
-                ctx.fillStyle = '#FFD700'; ctx.fillRect(x + 2, y + 5, 8, 2);
+                ctx.fillStyle = '#2E7D32';
+                ctx.fillRect(x, y + bob, 12, 16);
+                ctx.fillStyle = '#388E3C';
+                ctx.fillRect(x + 1, y + 1 + bob, 10, 14);
+                ctx.fillStyle = '#FFD700';
+                ctx.fillRect(x + 2, y + 4 + bob, 8, 3);
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(x + 4, y + 3 + bob, 4, 5);
                 break;
             case 'bikeKey':
+                // Key bow (round top)
                 ctx.fillStyle = '#FFD700';
-                ctx.fillRect(x + 4, y, 8, 4); ctx.fillRect(x + 6, y + 4, 4, 10); ctx.fillRect(x + 4, y + 12, 8, 2);
+                ctx.beginPath();
+                ctx.arc(x + 8, y + 4 + bob, 5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#DAA520';
+                ctx.beginPath();
+                ctx.arc(x + 8, y + 4 + bob, 3, 0, Math.PI * 2);
+                ctx.fill();
+                // Shaft
+                ctx.fillStyle = '#FFD700';
+                ctx.fillRect(x + 6, y + 8 + bob, 4, 6);
+                // Bit
+                ctx.fillRect(x + 4, y + 12 + bob, 6, 2);
+                ctx.fillRect(x + 4, y + 10 + bob, 2, 4);
+                // Sparkle
+                ctx.fillStyle = '#FFF';
+                ctx.fillRect(x + 2, y + bob, 2, 2);
+                ctx.fillRect(x + 12, y + 2 + bob, 2, 2);
                 break;
             case 'petrol':
-                ctx.fillStyle = '#4CAF50'; ctx.fillRect(x + 4, y, 8, 4); ctx.fillRect(x + 2, y + 4, 12, 18);
-                ctx.fillStyle = '#FF0000'; ctx.fillRect(x + 3, y + 8, 10, 6);
+                // Bottle body
+                ctx.fillStyle = '#2E7D32';
+                ctx.fillRect(x + 2, y + 4 + bob, 12, 18);
+                // Cap
+                ctx.fillStyle = '#FF0000';
+                ctx.fillRect(x + 4, y + bob, 8, 5);
+                // Label
+                ctx.fillStyle = '#FF5722';
+                ctx.fillRect(x + 3, y + 8 + bob, 10, 8);
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(x + 5, y + 10 + bob, 6, 2);
+                ctx.fillRect(x + 5, y + 13 + bob, 4, 2);
+                // Liquid level
+                ctx.fillStyle = '#4CAF50';
+                ctx.fillRect(x + 3, y + 14 + bob, 10, 6);
                 break;
             case 'chai':
+                // Cup
                 ctx.fillStyle = '#D32F2F';
-                ctx.fillRect(x + 2, y + 4, 12, 10); ctx.fillRect(x + 12, y + 6, 4, 4);
-                ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.fillRect(x + 4, y, 2, 4);
+                ctx.fillRect(x + 2, y + 4 + bob, 12, 10);
+                // Cup rim
+                ctx.fillStyle = '#E57373';
+                ctx.fillRect(x + 1, y + 4 + bob, 14, 2);
+                // Handle
+                ctx.fillStyle = '#B71C1C';
+                ctx.fillRect(x + 13, y + 6 + bob, 3, 5);
+                // Chai inside
+                ctx.fillStyle = '#8D6E63';
+                ctx.fillRect(x + 3, y + 6 + bob, 10, 6);
+                // Steam wisps
+                const t = Date.now() * 0.003;
+                ctx.fillStyle = 'rgba(255,255,255,0.5)';
+                ctx.fillRect(x + 4, y - 2 + Math.sin(t) * 2 + bob, 2, 4);
+                ctx.fillRect(x + 8, y - 4 + Math.sin(t + 1) * 2 + bob, 2, 4);
                 break;
             case 'parchi':
-                ctx.fillStyle = '#FFF8DC'; ctx.fillRect(x, y, 12, 16);
+                // Paper slip
+                ctx.fillStyle = '#FFF8DC';
+                ctx.fillRect(x, y + bob, 12, 16);
+                ctx.fillStyle = '#F5F0C0';
+                ctx.fillRect(x + 1, y + 1 + bob, 10, 14);
+                // Text lines
                 ctx.fillStyle = '#333';
-                ctx.fillRect(x + 2, y + 4, 8, 1); ctx.fillRect(x + 2, y + 7, 8, 1);
+                ctx.fillRect(x + 2, y + 3 + bob, 8, 1);
+                ctx.fillRect(x + 2, y + 6 + bob, 8, 1);
+                ctx.fillRect(x + 2, y + 9 + bob, 6, 1);
+                // Stamp
+                ctx.fillStyle = '#CC0000';
+                ctx.fillRect(x + 6, y + 11 + bob, 5, 4);
                 break;
         }
     },
