@@ -104,8 +104,10 @@ const Obstacles = {
     spawnCoin() {
         const coin = this.getInactiveCoin();
         if (!coin) return;
-        // 5% chance for Jugaad Repair (rare roadside mechanic)
-        if (Math.random() < 0.05 && Player.mode === 'foot' && !Player.hasBikeKey) {
+        const levelData = Levels.currentLevelData;
+        const isFootOnly = levelData && levelData.footOnly;
+        // 5% chance for Jugaad Repair (rare roadside mechanic) - not in footOnly levels
+        if (!isFootOnly && Math.random() < 0.05 && Player.mode === 'foot' && !Player.hasBikeKey) {
             coin.type = 'jugaadRepair';
             coin.w = 24; coin.h = 24;
         } else {
@@ -130,7 +132,7 @@ const Obstacles = {
     getCoinTypesForLevel(level) {
         switch (level) {
             case 0: return ['cash10', 'cash50', 'cash10'];
-            case 1: return ['cash10', 'cash50', 'cash100', 'bikeKey', 'chai'];
+            case 1: return ['cash10', 'cash50', 'cash100', 'chai'];
             case 2: return ['cash10', 'cash50', 'cash100', 'petrol', 'chai'];
             case 3: return ['cash10', 'cash50', 'cash100', 'petrol'];
             case 4: return ['cash50', 'cash100', 'chai', 'parchi'];
@@ -496,6 +498,18 @@ const Obstacles = {
                 ctx.fillRect(x + 2, y + 4 + bob, 8, 3);
                 ctx.fillStyle = '#fff';
                 ctx.fillRect(x + 4, y + 3 + bob, 4, 5);
+                break;
+            case 'cash500':
+                ctx.fillStyle = '#1B5E20';
+                ctx.fillRect(x, y + bob, 12, 16);
+                ctx.fillStyle = '#2E7D32';
+                ctx.fillRect(x + 1, y + 1 + bob, 10, 14);
+                ctx.fillStyle = '#FFD700';
+                ctx.fillRect(x + 1, y + 4 + bob, 10, 3);
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(x + 3, y + 3 + bob, 6, 2);
+                ctx.fillRect(x + 2, y + 9 + bob, 8, 1);
+                ctx.fillRect(x + 2, y + 11 + bob, 8, 1);
                 break;
             case 'bikeKey':
                 // Key bow (round top)

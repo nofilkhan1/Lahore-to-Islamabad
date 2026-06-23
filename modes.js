@@ -163,7 +163,7 @@ const Modes = {
     spawnBonusCash() {
         const coin = Obstacles.getInactiveCoin();
         if (!coin) return;
-        const types = ['cash10', 'cash50', 'cash100'];
+        const types = ['cash10', 'cash100', 'cash500'];
         coin.type = types[Utils.randomInt(0, 2)];
         coin.w = 12; coin.h = 16;
         coin.x = Utils.random(50, 750);
@@ -218,7 +218,7 @@ const Modes = {
                 HUD.showMessage('NEED Rs. 1000!', '#ff4444');
             }
         }
-        if (Player.y < Player.groundY - 20 && Player.velX > 300) {
+        if (Player.y < Player.groundY - 20 && Player.velX > 450) {
             this.toll.active = false;
             this.toll.choiceMade = true;
             Game.targetScrollSpeed = Levels.currentLevelData ? Levels.currentLevelData.scrollSpeed : 200;
@@ -248,7 +248,7 @@ const Modes = {
     renderOverlay(ctx) {
         if (this.loadShedding.active) {
             const W = 800, H = 450;
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.92)';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.90)';
             ctx.fillRect(0, 0, W, H);
             const px = Player.x + Player.w / 2;
             const py = Player.y + Player.h / 2;

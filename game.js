@@ -20,6 +20,8 @@ const Game = {
     muted: false,
     tollBarrierSpawned: false,
     bikeKeySpawned: false,
+    chalaanCompleted: false,
+    loadSheddingCompleted: false,
     smsActive: false,
     smsTimer: 0,
     lastSmsDistance: 0,
@@ -116,11 +118,13 @@ const Game = {
         const levelData = Levels.currentLevelData;
         if (levelData) {
             // Load shedding trigger
-            if (levelData.loadSheddingAt && !Modes.loadShedding.active && this.distance >= levelData.loadSheddingAt) {
+            if (levelData.loadSheddingAt && !this.loadSheddingCompleted && !Modes.loadShedding.active && this.distance >= levelData.loadSheddingAt) {
+                this.loadSheddingCompleted = true;
                 Modes.activateLoadShedding();
             }
             // Chalaan chase trigger
-            if (levelData.isChaseModeActive && !Modes.chalaan.active && this.distance >= (levelData.chalaanStart || 2000)) {
+            if (levelData.isChaseModeActive && !this.chalaanCompleted && !Modes.chalaan.active && this.distance >= (levelData.chalaanStart || 2000)) {
+                this.chalaanCompleted = true;
                 Modes.activateChalaan();
             }
             // Toll barrier spawn at exact distance
@@ -184,7 +188,7 @@ const Game = {
     handleCollision(obstacle) {
         if (Player.invincible) return;
         if (obstacle.type === 'speedCamera') {
-            if (Player.mode === 'bike' && Player.velX > 400) {
+            if (Player.mode === 'bike') {
                 Player.wallet = Math.max(0, Player.wallet - 500);
                 Audio.play('cameraFlash');
                 Utils.triggerScreenShake(3, 0.3);
@@ -295,6 +299,8 @@ const Game = {
         this.lastSmsDistance = 0;
         this.tollBarrierSpawned = false;
         this.bikeKeySpawned = false;
+        this.chalaanCompleted = false;
+        this.loadSheddingCompleted = false;
         Player.reset();
         Obstacles.reset();
         Levels.loadLevel(0);

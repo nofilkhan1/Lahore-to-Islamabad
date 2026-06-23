@@ -251,7 +251,16 @@ const Camera = {
 
     renderGround(ctx, theme, W, H) {
         const groundY = H - 80;
-        // Main ground
+        const levelData = Levels.currentLevelData;
+        const isUphill = levelData && levelData.uphill;
+
+        // Main ground with optional tilt
+        ctx.save();
+        if (isUphill) {
+            ctx.translate(0, H);
+            ctx.rotate(-0.03); // Slight upward tilt
+            ctx.translate(0, -H);
+        }
         ctx.fillStyle = theme.ground;
         ctx.fillRect(0, groundY, W, 80);
 
@@ -283,5 +292,6 @@ const Camera = {
                 ctx.fillRect(x + Math.sin(x) * 5, groundY + 30, 20, 2);
             }
         }
+        ctx.restore();
     },
 };

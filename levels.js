@@ -43,7 +43,8 @@ const Levels = {
         }
         if (complete) {
             if (Game.currentLevel < this.totalLevels - 1) {
-                Game.startBonusStage();
+                Game.levelComplete();
+                setTimeout(() => Game.startBonusStage(), 2000);
             } else {
                 Game.gameWon();
             }
@@ -113,7 +114,8 @@ const Levels = {
                 ctx.fillText('DOODH WALA', shopX + 10, shopY + 18);
                 ctx.fillStyle = '#CD853F';
                 ctx.fillRect(shopX + 12, shopY + 30, 10, 16);
-            ctx.fillRect(shopX + 26, shopY + 32, 8, 14);
+                ctx.fillRect(shopX + 26, shopY + 32, 8, 14);
+            }
         }
     },
 };
