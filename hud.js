@@ -45,7 +45,7 @@ const HUD = {
         const fuelBarFill = document.getElementById('fuelBarFill');
         if (Player.mode === 'bike') {
             fuelContainer.classList.add('visible');
-            fuelBarFill.style.width = Player.fuel + '%';
+            fuelBarFill.style.width = (Player.fuel / Player.maxFuel * 100) + '%';
             if (Player.fuel > 50) fuelBarFill.style.background = 'linear-gradient(90deg, #4CAF50, #8BC34A)';
             else if (Player.fuel > 20) fuelBarFill.style.background = 'linear-gradient(90deg, #FFC107, #FF9800)';
             else fuelBarFill.style.background = 'linear-gradient(90deg, #F44336, #FF5722)';

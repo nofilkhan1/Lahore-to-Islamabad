@@ -152,7 +152,7 @@ const Modes = {
             if (c.velY !== undefined) c.y += c.velY * (dt / 60);
             else c.y += 100 * (dt / 60); // fallback speed
             if (Utils.checkAABB(playerBox, { x: c.x, y: c.y, w: c.w, h: c.h })) {
-                const value = c.type === 'cash100' ? 100 : c.type === 'cash50' ? 50 : 10;
+                const value = c.type === 'cash500' ? 500 : c.type === 'cash100' ? 100 : c.type === 'cash50' ? 50 : 10;
                 this.bonus.collected += value;
                 Particles.burst(c.x, c.y, 5, '#FFD700');
                 Obstacles.recycleCoin(c);
@@ -326,7 +326,7 @@ const Modes = {
         Player.wallet -= u.cost;
         u.owned++;
         // Apply upgrade immediately
-        if (u.id === 'tank') Player.maxFuel = 100 + u.owned * 50;
+        if (u.id === 'tank') Player.maxFuel = 150 + u.owned * 50;
         if (u.id === 'speed') Player.speedMultiplier = 1 + u.owned * 0.1;
         if (u.id === 'shield') Player.shieldCount = u.owned;
         if (u.id === 'mtag') Player.mtagPass = u.owned > 0;

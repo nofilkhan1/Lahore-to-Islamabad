@@ -254,7 +254,7 @@ START SCREEN (story + controls + high score)
 |---|---|---|---|---|---|---|
 | 1 | Mama's Doodh Run | Lahore | 15,000m | 100 | ~2.5 min | Foot only, start Rs.500 |
 | 2 | Liberty Market Rush | Lahore | 16,500m | 110 | ~2.5 min | Bike key at 5000m, chalaan |
-| 3 | Truck Art Gauntlet | GT Road | 18,000m | 120 | ~3 min | Load shedding repeats |
+| 3 | Truck Art Gauntlet | GT Road | 18,000m | 120 | ~2.5 min | Load shedding repeats |
 | 4 | Jhelum Toll Plaza | GT Road | 18,000m | 110 | ~3 min | Toll at 14000m |
 | 5 | Signal Sprint | Islamabad | 18,000m | 110 | ~3 min | Standard |
 | 6 | Final Climb to Monal | Islamabad | 16,200m | 90 | ~3 min | Uphill (-40px/s^2) |
@@ -383,7 +383,7 @@ When player narrowly avoids an obstacle (within 20px but no collision):
 **When:** After every level completion (before garage/next level)
 
 - 15 seconds only
-- Currency notes rain diagonally from the sky (Rs. 10, 50, 100)
+- Currency notes rain diagonally from the sky (Rs. 10, 100, 500)
 - Move left/right to collect
 - Total collected -> added to wallet -> garage or next level
 
