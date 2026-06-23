@@ -32,13 +32,18 @@ const Obstacles = {
 
     update(dt) {
         const scrollSpeed = Game.scrollSpeed;
+        // Difficulty scaling: spawn rate increases with distance
+        const difficultyMult = Math.max(0.5, 1 - (Game.distance / 5000) * 0.3);
+        const currentObstacleInterval = this.obstacleSpawnInterval * difficultyMult;
+        const currentCoinInterval = this.coinSpawnInterval * Math.max(0.6, 1 - (Game.distance / 8000) * 0.2);
+
         this.obstacleSpawnTimer += dt;
-        if (this.obstacleSpawnTimer >= this.obstacleSpawnInterval) {
+        if (this.obstacleSpawnTimer >= currentObstacleInterval) {
             this.obstacleSpawnTimer = 0;
             this.spawnObstacle();
         }
         this.coinSpawnTimer += dt;
-        if (this.coinSpawnTimer >= this.coinSpawnInterval) {
+        if (this.coinSpawnTimer >= currentCoinInterval) {
             this.coinSpawnTimer = 0;
             this.spawnCoin();
         }
@@ -98,16 +103,22 @@ const Obstacles = {
     spawnCoin() {
         const coin = this.getInactiveCoin();
         if (!coin) return;
-        const types = this.getCoinTypesForLevel(Game.currentLevel);
-        const type = types[Utils.randomInt(0, types.length - 1)];
-        coin.type = type;
-        switch (type) {
-            case 'cash10': case 'cash50': case 'cash100': coin.w = 12; coin.h = 16; break;
-            case 'bikeKey': coin.w = 16; coin.h = 16; break;
-            case 'petrol': coin.w = 16; coin.h = 24; break;
-            case 'chai': coin.w = 16; coin.h = 16; break;
-            case 'parchi': coin.w = 12; coin.h = 16; break;
-            default: coin.w = 12; coin.h = 16;
+        // 5% chance for Jugaad Repair (rare roadside mechanic)
+        if (Math.random() < 0.05 && Player.mode === 'foot' && !Player.hasBikeKey) {
+            coin.type = 'jugaadRepair';
+            coin.w = 24; coin.h = 24;
+        } else {
+            const types = this.getCoinTypesForLevel(Game.currentLevel);
+            const type = types[Utils.randomInt(0, types.length - 1)];
+            coin.type = type;
+            switch (type) {
+                case 'cash10': case 'cash50': case 'cash100': coin.w = 12; coin.h = 16; break;
+                case 'bikeKey': coin.w = 16; coin.h = 16; break;
+                case 'petrol': coin.w = 16; coin.h = 24; break;
+                case 'chai': coin.w = 16; coin.h = 16; break;
+                case 'parchi': coin.w = 12; coin.h = 16; break;
+                default: coin.w = 12; coin.h = 16;
+            }
         }
         coin.x = 850;
         coin.y = this.groundY + Utils.random(-30, 30);
@@ -518,6 +529,21 @@ const Obstacles = {
                 // Stamp
                 ctx.fillStyle = '#CC0000';
                 ctx.fillRect(x + 6, y + 11 + bob, 5, 4);
+                break;
+            case 'jugaadRepair':
+                // Wrench icon
+                ctx.fillStyle = '#C0C0C0';
+                ctx.fillRect(x + 8, y + 2 + bob, 4, 16);
+                ctx.fillStyle = '#888';
+                ctx.fillRect(x + 4, y + 2 + bob, 12, 6);
+                // Sparkle
+                ctx.fillStyle = '#FFD700';
+                ctx.fillRect(x + 2, y + bob, 3, 3);
+                ctx.fillRect(x + 18, y + 4 + bob, 3, 3);
+                // Text
+                ctx.fillStyle = '#FF6F00';
+                ctx.font = '6px monospace';
+                ctx.fillText('REPAIR', x + 1, y + 22 + bob);
                 break;
         }
     },

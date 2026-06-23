@@ -7,6 +7,16 @@ const Modes = {
     chalaan: { active: false, wardenX: -60, wardenY: 370, timer: 45, stunned: false, stunTimer: 0, caught: false },
     bonus: { active: false, timer: 15, cashRainTimer: 0, collected: 0 },
     toll: { active: false, choiceMade: false },
+    garage: {
+        active: false,
+        upgrades: [
+            { id: 'tank', name: 'Bigger Fuel Tank', desc: '+50 fuel capacity', cost: 400, max: 3, owned: 0, effect: '+50 fuel' },
+            { id: 'shield', name: 'Bike Shield', desc: 'Survive 1 extra crash', cost: 600, max: 2, owned: 0, effect: '+1 crash' },
+            { id: 'speed', name: 'Speed Boost', desc: '+10% top speed', cost: 500, max: 3, owned: 0, effect: '+10% speed' },
+            { id: 'mtag', name: 'M-Tag Pass', desc: 'Skip toll plaza fees', cost: 800, max: 1, owned: 0, effect: 'Free toll' },
+        ],
+        selectedIndex: 0,
+    },
 
     init() { this.reset(); },
 
@@ -180,7 +190,15 @@ const Modes = {
     updateToll(dt) {
         if (!this.toll.active || this.toll.choiceMade) return;
         if (Input.isJumpJustPressed() || Input.isUp()) {
-            if (Player.wallet >= 1000) {
+            if (Player.mtagPass) {
+                HUD.showMessage('M-TAG: FREE PASS!', '#00FF00');
+                Audio.play('collect');
+                this.toll.active = false;
+                this.toll.choiceMade = true;
+                Game.targetScrollSpeed = Levels.currentLevelData ? Levels.currentLevelData.scrollSpeed : 200;
+                Game.scrollSpeed = Game.targetScrollSpeed;
+                Obstacles.getActive().forEach(o => { if (o.type === 'tollBarrier') o.active = false; });
+            } else if (Player.wallet >= 1000) {
                 Player.wallet -= 1000;
                 HUD.showMessage('-Rs. 1000 TOLL PAID', '#FFD700');
                 Audio.play('collectCash');
@@ -251,5 +269,59 @@ const Modes = {
         if (this.chalaan.active) this.renderChalaanWarden(ctx);
         if (this.toll.active) this.renderTollOverlay(ctx);
         if (this.bonus.active) this.renderBonusStage(ctx);
+    },
+
+    // === TRUCK ART GARAGE ===
+    openGarage() {
+        this.garage.active = true;
+        this.garage.selectedIndex = 0;
+        // Reset owned counts from saved upgrades
+        const saved = Player.upgrades || {};
+        this.garage.upgrades.forEach(u => {
+            u.owned = saved[u.id] || 0;
+        });
+        this.renderGarageUI();
+        Game.showScreen('garageScreen');
+    },
+
+    closeGarage() {
+        this.garage.active = false;
+        // Save upgrades to player
+        if (!Player.upgrades) Player.upgrades = {};
+        this.garage.upgrades.forEach(u => {
+            Player.upgrades[u.id] = u.owned;
+        });
+        Game.showScreen('none');
+        Game.continueAfterLevel();
+    },
+
+    renderGarageUI() {
+        const container = document.getElementById('garageUpgrades');
+        if (!container) return;
+        container.innerHTML = '';
+        this.garage.upgrades.forEach((u, i) => {
+            const div = document.createElement('div');
+            div.style.cssText = 'margin:8px 0; padding:10px; background:#333; border-radius:8px; cursor:pointer; border:2px solid ' + (i === this.garage.selectedIndex ? '#FF6F00' : '#555') + ';';
+            const affordable = Game.wallet >= u.cost && u.owned < u.max;
+            div.innerHTML = '<div style="color:' + (affordable ? '#fff' : '#888') + '; font-size:14px;">' +
+                u.name + ' <span style="color:#FFD700;">Rs.' + u.cost + '</span></div>' +
+                '<div style="color:#aaa; font-size:11px;">' + u.desc + ' | Owned: ' + u.owned + '/' + u.max + '</div>';
+            div.onclick = () => this.buyUpgrade(i);
+            container.appendChild(div);
+        });
+        const walletEl = document.getElementById('garageWallet');
+        if (walletEl) walletEl.textContent = 'Wallet: Rs. ' + Game.wallet;
+    },
+
+    buyUpgrade(index) {
+        const u = this.garage.upgrades[index];
+        if (!u || Game.wallet < u.cost || u.owned >= u.max) return;
+        Game.wallet -= u.cost;
+        u.owned++;
+        // Apply upgrade immediately
+        if (u.id === 'tank') Player.maxFuel = 100 + u.owned * 50;
+        if (u.id === 'speed') Player.speedMultiplier = 1 + u.owned * 0.1;
+        Audio.play('collect');
+        this.renderGarageUI();
     },
 };

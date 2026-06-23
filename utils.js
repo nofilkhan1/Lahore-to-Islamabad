@@ -41,6 +41,15 @@ const Utils = {
         return Math.floor(amount).toLocaleString('en-PK');
     },
 
+    // --- Spend from wallet (enforce floor at 0) ---
+    spendWallet(amount) {
+        if (Player.wallet >= amount) {
+            Player.wallet -= amount;
+            return true;
+        }
+        return false;
+    },
+
     // --- Pakistani Color Palette (16-bit style) ---
     COLORS: {
         // Player

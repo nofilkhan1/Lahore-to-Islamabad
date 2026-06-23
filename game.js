@@ -202,8 +202,18 @@ const Game = {
             case 'cash50': Player.wallet += 50; Audio.play('collectCash'); HUD.showMessage('+Rs. 50', '#FFD700'); break;
             case 'cash100': Player.wallet += 100; Audio.play('collectCash'); HUD.showMessage('+Rs. 100', '#FFD700'); break;
             case 'bikeKey': Player.promoteToBike(); Audio.play('collectKey'); HUD.showMessage('BIKE UNLOCKED!', '#4CAF50'); break;
-            case 'petrol': Player.fuel = Math.min(100, Player.fuel + 25); Audio.play('collectPetrol'); HUD.showMessage('+FUEL', '#4CAF50'); break;
+            case 'petrol': Player.fuel = Math.min(Player.maxFuel, Player.fuel + 25); Audio.play('collectPetrol'); HUD.showMessage('+FUEL', '#4CAF50'); break;
             case 'chai': Player.activateChaiPower(); Audio.play('chaiPower'); HUD.showMessage('CHAI POWER!', '#FF9800'); break;
+            case 'jugaadRepair':
+                if (Player.wallet >= 200) {
+                    Player.wallet -= 200;
+                    Player.promoteToBike();
+                    Audio.play('collectKey');
+                    HUD.showMessage('JUGAAD REPAIR! -Rs.200', '#4CAF50');
+                } else {
+                    HUD.showMessage('Need Rs. 200 for repair!', '#ff4444');
+                }
+                break;
             case 'parchi':
                 Player.parchiCount++;
                 Audio.play('collectParchi');
@@ -330,6 +340,20 @@ const Game = {
         HUD.show();
     },
 
+    openGarageOrNext() {
+        // Open garage every 2 levels (after level 2 and 4)
+        if (this.currentLevel > 0 && this.currentLevel % 2 === 1 && this.currentLevel < Levels.totalLevels - 1) {
+            Modes.openGarage();
+        } else {
+            this.nextLevel();
+        }
+    },
+
+    continueAfterLevel() {
+        this.hideAllScreens();
+        this.nextLevel();
+    },
+
     gameWon() {
         if (this.state === 'gameOver') return;
         this.state = 'gameOver';
@@ -373,7 +397,8 @@ const Game = {
             this.showScreen('startScreen');
             HUD.hide();
         };
-        document.getElementById('btnNextLevel').onclick = () => this.nextLevel();
+        document.getElementById('btnNextLevel').onclick = () => this.openGarageOrNext();
+        document.getElementById('btnGarageSkip').onclick = () => Modes.closeGarage();
         document.getElementById('btnPause').onclick = () => { if (this.state === 'playing') this.pause(); else if (this.state === 'paused') this.resume(); };
         document.getElementById('btnQuit').onclick = () => {
             this.state = 'menu';

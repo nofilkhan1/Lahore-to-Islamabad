@@ -14,7 +14,7 @@ const Player = {
 
     w: 32, h: 64,
     hearts: 5, maxHearts: 5,
-    wallet: 0, fuel: 100, parchiCount: 0,
+    wallet: 0, fuel: 100, maxFuel: 100, parchiCount: 0,
     ducking: false,
     invincible: false, invincibleTimer: 0,
     flashTimer: 0, flashVisible: true, flashInterval: 0,
@@ -23,6 +23,10 @@ const Player = {
     animFrame: 0, animTimer: 0,
     runCycle: 0,
     facingRight: true,
+    upgrades: {},
+    speedMultiplier: 1,
+    shieldCount: 0,
+    mtagPass: false,
 
     init() { this.reset(); },
 
@@ -35,7 +39,7 @@ const Player = {
         this.grounded = true;
         this.w = this.foot.w; this.h = this.foot.h;
         this.hearts = this.maxHearts;
-        this.wallet = 0; this.fuel = 100;
+        this.wallet = 0; this.fuel = 100; this.maxFuel = 100;
         this.parchiCount = 0;
         this.ducking = false;
         this.invincible = false; this.invincibleTimer = 0;

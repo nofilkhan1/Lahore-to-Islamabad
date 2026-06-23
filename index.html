@@ -553,12 +553,25 @@
         <!-- LEVEL COMPLETE SCREEN -->
         <div class="screen-overlay" id="levelCompleteScreen">
             <div class="screen-title">LEVEL COMPLETE!</div>
-            <div class="screen-subtitle" id="levelCompleteText">BOHAT HARD! 🔥</div>
+            <div class="screen-subtitle" id="levelCompleteText">BOHAT HARD!</div>
             <div class="stats" id="levelCompleteStats">
                 Distance: 0 m<br>
                 Wallet: Rs. 0
             </div>
-            <button class="screen-btn" id="btnNextLevel">▶ NEXT LEVEL</button>
+            <button class="screen-btn" id="btnNextLevel">NEXT LEVEL</button>
+        </div>
+
+        <!-- TRUCK ART GARAGE SCREEN -->
+        <div class="screen-overlay" id="garageScreen" style="display:none;">
+            <div class="screen-title" style="color:#FF6F00;">TRUCK ART GARAGE</div>
+            <div class="screen-subtitle">Apni bike sudharo! (Fix your bike)</div>
+            <div id="garageUpgrades" style="margin:16px 0; text-align:left; display:inline-block;">
+                <!-- Populated by JS -->
+            </div>
+            <div id="garageWallet" style="color:#FFD700; font-size:18px; margin:8px 0;">Wallet: Rs. 0</div>
+            <div style="display:flex; gap:10px; justify-content:center; margin-top:12px;">
+                <button class="screen-btn" id="btnGarageSkip" style="background:#666;">SKIP</button>
+            </div>
         </div>
 
         <!-- LOADING SCREEN -->
