@@ -18,6 +18,7 @@ const Player = {
     ducking: false,
     invincible: false, invincibleTimer: 0,
     flashTimer: 0, flashVisible: true, flashInterval: 0,
+    hitFlash: 0, hitFlashTimer: 0,
     chaiActive: false, chaiTimer: 0,
     mountingBike: false, mountTimer: 0,
     animFrame: 0, animTimer: 0,
@@ -30,6 +31,8 @@ const Player = {
     speedMultiplier: 1,
     shieldCount: 0,
     mtagPass: false,
+    coyoteTimer: 0,
+    jumpBufferTimer: 0,
 
     init() { this.reset(); },
 
@@ -50,10 +53,13 @@ const Player = {
         this.ducking = false;
         this.invincible = false; this.invincibleTimer = 0;
         this.flashTimer = 0; this.flashVisible = true; this.flashInterval = 0;
+        this.hitFlash = 0; this.hitFlashTimer = 0;
         this.chaiActive = false; this.chaiTimer = 0;
         this.mountingBike = false; this.mountTimer = 0;
         this.animFrame = 0; this.animTimer = 0;
         this.runCycle = 0;
+        this.coyoteTimer = 0;
+        this.jumpBufferTimer = 0;
     },
 
     resetForNewLevel() {
@@ -99,14 +105,17 @@ const Player = {
         maxSpeed *= this.speedMultiplier;
         if (this.chaiActive) maxSpeed *= 2;
 
+        const accel = this.mode === 'bike' ? 0.15 : 0.25;
+        const decel = this.mode === 'bike' ? 0.2 : 0.3;
+
         if (moveRight) {
-            this.velX = Utils.lerp(this.velX, maxSpeed, 0.1);
+            this.velX = Utils.lerp(this.velX, maxSpeed, accel);
             this.facingRight = true;
         } else if (moveLeft) {
-            this.velX = Utils.lerp(this.velX, -maxSpeed * 0.5, 0.1);
+            this.velX = Utils.lerp(this.velX, -maxSpeed * 0.5, accel);
             this.facingRight = false;
         } else {
-            this.velX = Utils.lerp(this.velX, 0, 0.15);
+            this.velX = Utils.lerp(this.velX, 0, decel);
         }
         this.flipX = !this.facingRight;
 
@@ -133,11 +142,29 @@ const Player = {
             Utils.triggerScreenShake(3, 0.2);
         }
 
-        if (jumpPress && this.grounded) {
+        // Coyote time - grace period after leaving ground
+        if (this.grounded) {
+            this.coyoteTimer = 0.12;
+        } else {
+            this.coyoteTimer -= dt / 60;
+        }
+
+        // Jump buffer - remember jump press before landing
+        if (jumpPress) {
+            this.jumpBufferTimer = 0.1;
+        } else {
+            this.jumpBufferTimer -= dt / 60;
+        }
+
+        // Execute jump if grounded (or in coyote window) and jump buffered
+        const canJump = this.coyoteTimer > 0;
+        if (this.jumpBufferTimer > 0 && canJump) {
             const jumpForce = this.mode === 'bike' ? this.bike.jumpForce : this.foot.jumpForce;
             this.velY = this.chaiActive ? jumpForce * 1.3 : jumpForce;
             this.grounded = false;
             this.jumping = true;
+            this.coyoteTimer = 0;
+            this.jumpBufferTimer = 0;
             Audio.play('jump');
         }
 
@@ -169,6 +196,14 @@ const Player = {
             this.flashInterval += dt / 60;
             if (this.flashInterval >= 0.08) { this.flashVisible = !this.flashVisible; this.flashInterval = 0; }
             if (this.invincibleTimer <= 0) { this.invincible = false; this.flashVisible = true; }
+        }
+
+        // Hit flash effect (red tint on damage)
+        if (this.hitFlashTimer > 0) {
+            this.hitFlashTimer -= dt / 60;
+            this.hitFlash = Math.max(0, this.hitFlashTimer / 0.3);
+        } else {
+            this.hitFlash = 0;
         }
 
         if (this.chaiActive) { this.chaiTimer -= dt / 60; if (this.chaiTimer <= 0) this.chaiActive = false; }
@@ -327,6 +362,12 @@ const Player = {
             ctx.fillStyle = 'rgba(255, 152, 0, ' + glow + ')';
             ctx.fillRect(x - 6, y - 6, this.w + 12, this.h + 12);
         }
+
+        // Hit flash (red tint when damaged)
+        if (this.hitFlash > 0) {
+            ctx.fillStyle = 'rgba(255, 0, 0, ' + (this.hitFlash * 0.4) + ')';
+            ctx.fillRect(x - 2, y - 2, this.w + 4, this.h + 4);
+        }
     },
 
     renderBike(ctx) {
@@ -474,6 +515,12 @@ const Player = {
             const glow = Math.sin(Date.now() * 0.01) * 0.1 + 0.25;
             ctx.fillStyle = 'rgba(255, 152, 0, ' + glow + ')';
             ctx.fillRect(x - 6, y - 22, this.w + 12, this.h + 12);
+        }
+
+        // Hit flash
+        if (this.hitFlash > 0) {
+            ctx.fillStyle = 'rgba(255, 0, 0, ' + (this.hitFlash * 0.3) + ')';
+            ctx.fillRect(x - 4, y - 22, this.w + 8, this.h + 8);
         }
 
         // Low fuel warning

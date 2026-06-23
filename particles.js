@@ -4,7 +4,7 @@
 
 const Particles = {
     pool: [],
-    POOL_SIZE: 50,
+    POOL_SIZE: 100,
 
     init() {
         for (let i = 0; i < this.POOL_SIZE; i++) {

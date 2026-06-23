@@ -1,5 +1,5 @@
 // ============================================================
-// game.js — Core game loop, deltaTime, pause/play, state manager
+// game.js — Core game loop, state manager, collisions
 // ============================================================
 
 const Game = {
@@ -8,7 +8,6 @@ const Game = {
     scale: 1,
     state: 'loading',
     currentLevel: 0,
-    currentSubLevel: '1.1',
     lastTimestamp: 0,
     deltaTime: 0,
     FPS: 0,
@@ -22,25 +21,18 @@ const Game = {
     bikeKeySpawned: false,
     chalaanCompleted: false,
     loadSheddingCompleted: false,
-    smsActive: false,
-    smsTimer: 0,
-    lastSmsDistance: 0,
-    SMS_MESSAGES: [
-        { sender: 'Ammi', text: 'Doodh le aana, jaldi karo!' },
-        { sender: 'Abbu', text: 'GT Road pe dhyan se, speed mat karo' },
-        { sender: 'Dost', text: 'Kahan ho yar? Party hai aaj!' },
-        { sender: 'Ammi', text: 'Khana kha liya?' },
-        { sender: 'Abbu', text: 'Phone charge kar lena' },
-        { sender: 'Bhen', text: 'Mere liye chaye le aana' },
-        { sender: 'Dost', text: 'Late ho rahe ho, jaldi aao!' },
-        { sender: 'Ammi', text: 'Raat ko jaldi so jana' },
-    ],
+    nearMissCombo: 0,
+    nearMissTimer: 0,
+    levelIntroTimer: 0,
+    levelIntroText: '',
+    levelIntroSubtext: '',
+    fadeAlpha: 1,
+    fadeDirection: -1,
 
     init() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
         this.ctx.imageSmoothingEnabled = false;
-
         this.resizeCanvas();
         window.addEventListener('resize', () => this.resizeCanvas());
 
@@ -55,20 +47,35 @@ const Game = {
         HUD.init(this.canvas);
         Particles.init();
 
-        // Load assets (non-blocking, falls back to vector if missing)
+        const totalAssets = Object.keys(AssetLoader.manifest).length;
+        let loadedAssets = 0;
         AssetLoader.init(() => {
-            console.log('[Game] Assets loaded or fallback ready');
+            loadedAssets = totalAssets;
+            this.updateLoadingBar(loadedAssets, totalAssets);
         });
+        const loadInterval = setInterval(() => {
+            loadedAssets = Object.keys(AssetLoader.images).length;
+            this.updateLoadingBar(loadedAssets, totalAssets);
+            if (loadedAssets >= totalAssets) clearInterval(loadInterval);
+        }, 100);
 
         this.setupMenuListeners();
 
         setTimeout(() => {
             this.state = 'menu';
             document.getElementById('loadingScreen').style.display = 'none';
-        }, 800);
+        }, 1200);
 
         this.lastTimestamp = performance.now();
         requestAnimationFrame((t) => this.loop(t));
+    },
+
+    updateLoadingBar(loaded, total) {
+        const pct = Math.min(100, Math.round((loaded / total) * 100));
+        const fill = document.getElementById('loadingBarFill');
+        const text = document.getElementById('loadingText');
+        if (fill) fill.style.width = pct + '%';
+        if (text) text.textContent = 'Loading assets... ' + pct + '%';
     },
 
     resizeCanvas() {
@@ -93,7 +100,6 @@ const Game = {
         const rawDelta = (timestamp - this.lastTimestamp) / 16.667;
         this.deltaTime = Math.min(rawDelta, 3);
         this.lastTimestamp = timestamp;
-
         this.fpsTimer += this.deltaTime / 60;
         if (this.fpsTimer >= 1) {
             this.FPS = this.frameCount;
@@ -104,6 +110,13 @@ const Game = {
 
         if (this.state === 'playing' || this.state === 'bonusStage') {
             this.update(this.deltaTime);
+        } else if (this.state === 'levelIntro') {
+            this.levelIntroTimer -= this.deltaTime / 60;
+            if (this.levelIntroTimer <= 0) {
+                this.state = 'playing';
+                this.fadeAlpha = 1;
+                this.fadeDirection = -1;
+            }
         }
 
         this.render();
@@ -114,25 +127,20 @@ const Game = {
         this.scrollSpeed = Utils.lerp(this.scrollSpeed, this.targetScrollSpeed, 0.05);
         this.distance += (this.scrollSpeed * dt) / 60;
 
-        // Check for mode triggers based on distance
         const levelData = Levels.currentLevelData;
         if (levelData) {
-            // Load shedding trigger
             if (levelData.loadSheddingAt && !this.loadSheddingCompleted && !Modes.loadShedding.active && this.distance >= levelData.loadSheddingAt) {
                 this.loadSheddingCompleted = true;
                 Modes.activateLoadShedding();
             }
-            // Chalaan chase trigger
             if (levelData.isChaseModeActive && !this.chalaanCompleted && !Modes.chalaan.active && this.distance >= (levelData.chalaanStart || 2000)) {
                 this.chalaanCompleted = true;
                 Modes.activateChalaan();
             }
-            // Toll barrier spawn at exact distance
             if (levelData.hasTollBarrier && !this.tollBarrierSpawned && this.distance >= levelData.tollDistance) {
                 this.tollBarrierSpawned = true;
                 Obstacles.spawnTollBarrier();
             }
-            // Bike key spawn at exact distance
             if (levelData.bikeKeyAt && !this.bikeKeySpawned && this.distance >= levelData.bikeKeyAt && Player.mode === 'foot') {
                 this.bikeKeySpawned = true;
                 Obstacles.spawnBikeKeyAtDistance(levelData.bikeKeyAt);
@@ -149,19 +157,17 @@ const Game = {
         Utils.updateScreenShake(dt);
 
         this.checkCollisions();
+        this.checkNearMisses();
         Levels.checkCompletion();
-        this.updateSMS();
 
-        if (Player.hearts <= 0) {
-            this.gameOver();
+        if (this.nearMissTimer > 0) {
+            this.nearMissTimer -= dt / 60;
+            if (this.nearMissTimer <= 0) this.nearMissCombo = 0;
         }
 
-        if (Input.isPause()) {
-            this.pause();
-        }
-        if (Input.isMute()) {
-            this.toggleMute();
-        }
+        if (Player.hearts <= 0) this.gameOver();
+        if (Input.isPause()) this.pause();
+        if (Input.isMute()) this.toggleMute();
     },
 
     checkCollisions() {
@@ -185,6 +191,32 @@ const Game = {
         }
     },
 
+    checkNearMisses() {
+        const playerBox = Player.getHitbox();
+        const margin = 20;
+        const expanded = { x: playerBox.x - margin, y: playerBox.y - margin, w: playerBox.w + margin * 2, h: playerBox.h + margin * 2 };
+        const activeObs = Obstacles.getActive();
+        for (let i = 0; i < activeObs.length; i++) {
+            const obs = activeObs[i];
+            if (!obs.active || obs.nearMissed) continue;
+            if (obs.type === 'tollBarrier' || obs.type === 'overheadWires') continue;
+            if (Utils.checkAABB(expanded, { x: obs.x, y: obs.y, w: obs.w, h: obs.h })) {
+                if (!Utils.checkAABB(playerBox, { x: obs.x, y: obs.y, w: obs.w, h: obs.h })) {
+                    obs.nearMissed = true;
+                    this.nearMissCombo++;
+                    this.nearMissTimer = 2;
+                    const bonus = this.nearMissCombo * 10;
+                    Player.wallet += bonus;
+                    const msg = this.nearMissCombo > 1
+                        ? 'CLOSE CALL x' + this.nearMissCombo + '! +Rs.' + bonus
+                        : 'CLOSE CALL! +Rs.' + bonus;
+                    HUD.showMessage(msg, '#00E5FF');
+                    Utils.triggerScreenShake(1, 0.1);
+                }
+            }
+        }
+    },
+
     handleCollision(obstacle) {
         if (Player.invincible) return;
         if (obstacle.type === 'speedCamera') {
@@ -192,7 +224,7 @@ const Game = {
                 Player.wallet = Math.max(0, Player.wallet - 500);
                 Audio.play('cameraFlash');
                 Utils.triggerScreenShake(3, 0.3);
-                HUD.showMessage('Rs. 500 FINE!', '#ff4444');
+                HUD.showMessage('-Rs. 500 FINE!', '#ff4444');
             }
             return;
         }
@@ -213,12 +245,13 @@ const Game = {
         if (Player.mode === 'bike') {
             if (Player.shieldCount > 0) {
                 Player.shieldCount--;
-                HUD.showMessage('SHIELD USED!', '#4CAF50');
+                HUD.showMessage('SHIELD!', '#4CAF50');
                 Obstacles.recycle(obstacle);
                 Utils.triggerScreenShake(2, 0.15);
             } else {
                 Player.demoteToFoot();
                 Obstacles.recycle(obstacle);
+                Player.hitFlashTimer = 0.3;
                 Utils.triggerScreenShake(4, 0.3);
             }
         } else {
@@ -226,6 +259,7 @@ const Game = {
             Player.invincible = true;
             Player.invincibleTimer = 1.5;
             Player.flashTimer = 1.5;
+            Player.hitFlashTimer = 0.3;
             Obstacles.recycle(obstacle);
             Audio.play('heartLoss');
             Utils.triggerScreenShake(3, 0.2);
@@ -237,6 +271,7 @@ const Game = {
             case 'cash10': Player.wallet += 10; Audio.play('collectCash'); HUD.showMessage('+Rs. 10', '#FFD700'); break;
             case 'cash50': Player.wallet += 50; Audio.play('collectCash'); HUD.showMessage('+Rs. 50', '#FFD700'); break;
             case 'cash100': Player.wallet += 100; Audio.play('collectCash'); HUD.showMessage('+Rs. 100', '#FFD700'); break;
+            case 'cash500': Player.wallet += 500; Audio.play('collectCash'); HUD.showMessage('+Rs. 500!', '#FFD700'); break;
             case 'bikeKey': Player.promoteToBike(); Audio.play('collectKey'); HUD.showMessage('BIKE UNLOCKED!', '#4CAF50'); break;
             case 'petrol': Player.fuel = Math.min(Player.maxFuel, Player.fuel + 25); Audio.play('collectPetrol'); HUD.showMessage('+FUEL', '#4CAF50'); break;
             case 'chai': Player.activateChaiPower(); Audio.play('chaiPower'); HUD.showMessage('CHAI POWER!', '#FF9800'); break;
@@ -245,9 +280,9 @@ const Game = {
                     Player.wallet -= 200;
                     Player.promoteToBike();
                     Audio.play('collectKey');
-                    HUD.showMessage('JUGAAD REPAIR! -Rs.200', '#4CAF50');
+                    HUD.showMessage('REPAIR -Rs.200', '#4CAF50');
                 } else {
-                    HUD.showMessage('Need Rs. 200 for repair!', '#ff4444');
+                    HUD.showMessage('Need Rs. 200!', '#ff4444');
                 }
                 break;
             case 'parchi':
@@ -257,36 +292,14 @@ const Game = {
                     Player.parchiCount = 0;
                     const prize = [200, 500, 1000][Utils.randomInt(0, 2)];
                     Player.wallet += prize;
-                    HUD.showMessage('PARCHI LOTTERY! +Rs.' + prize, '#FFD700');
+                    HUD.showMessage('BONUS +Rs.' + prize, '#FFD700');
                 } else {
-                    HUD.showMessage('Parchi (' + Player.parchiCount + '/3)', '#ccc');
+                    HUD.showMessage('Parchi ' + Player.parchiCount + '/3', '#ccc');
                 }
                 break;
         }
         Obstacles.recycleCoin(coin);
         Particles.burst(coin.x + coin.w / 2, coin.y + coin.h / 2, 8, '#FFD700');
-    },
-
-    updateSMS() {
-        if (this.state !== 'playing') return;
-        if (this.smsActive) {
-            this.smsTimer -= this.deltaTime / 60;
-            if (this.smsTimer <= 0) {
-                this.smsActive = false;
-                document.getElementById('smsNotification').classList.remove('show');
-            }
-            return;
-        }
-        if (this.distance - this.lastSmsDistance > Utils.random(500, 1000)) {
-            const msg = this.SMS_MESSAGES[Utils.randomInt(0, this.SMS_MESSAGES.length - 1)];
-            const el = document.getElementById('smsNotification');
-            el.querySelector('.sender').textContent = msg.sender;
-            el.querySelector('.message').textContent = msg.text;
-            el.classList.add('show');
-            this.smsActive = true;
-            this.smsTimer = 2;
-            this.lastSmsDistance = this.distance;
-        }
     },
 
     startGame() {
@@ -296,7 +309,8 @@ const Game = {
         this.distance = 0;
         this.scrollSpeed = 200;
         this.targetScrollSpeed = 200;
-        this.lastSmsDistance = 0;
+        this.nearMissCombo = 0;
+        this.nearMissTimer = 0;
         this.tollBarrierSpawned = false;
         this.bikeKeySpawned = false;
         this.chalaanCompleted = false;
@@ -307,8 +321,30 @@ const Game = {
         Camera.reset();
         Particles.reset();
         Modes.reset();
+        HUD.init();
         this.hideAllScreens();
         HUD.show();
+        this.showLevelIntro();
+    },
+
+    showLevelIntro() {
+        const levelData = Levels.currentLevelData;
+        if (!levelData) return;
+        const names = ['Mama\'s Doodh Run', 'Liberty Market Rush', 'Truck Art Gauntlet', 'Jhelum Toll Plaza', 'Signal Sprint', 'Final Climb to Monal'];
+        const objectives = [
+            'Survive 3000m with Rs. 500',
+            'Survive 3000m — find the bike key!',
+            'Survive 3000m on the highway',
+            'Survive 3500m — pay the toll or jump!',
+            'Survive 3000m through the capital',
+            'Climb 4000m to reach The Monal!',
+        ];
+        this.levelIntroText = levelData.city + ' — ' + (names[this.currentLevel] || 'Unknown');
+        this.levelIntroSubtext = objectives[this.currentLevel] || '';
+        this.state = 'levelIntro';
+        this.levelIntroTimer = 2.5;
+        this.fadeAlpha = 1;
+        this.fadeDirection = 1;
     },
 
     pause() {
@@ -328,7 +364,7 @@ const Game = {
     toggleMute() {
         this.muted = !this.muted;
         Audio.setMuted(this.muted);
-        const label = this.muted ? '🔇 Sound: OFF' : '🔊 Sound: ON';
+        const label = this.muted ? 'Sound: OFF' : 'Sound: ON';
         document.getElementById('btnMuteStart').textContent = label;
         document.getElementById('btnMutePause').textContent = label;
     },
@@ -374,19 +410,25 @@ const Game = {
         this.distance = 0;
         this.scrollSpeed = 200;
         this.targetScrollSpeed = 200;
+        this.tollBarrierSpawned = false;
+        this.bikeKeySpawned = false;
+        this.chalaanCompleted = false;
+        this.loadSheddingCompleted = false;
+        this.nearMissCombo = 0;
+        this.nearMissTimer = 0;
         Player.resetForNewLevel();
         Obstacles.reset();
         Levels.loadLevel(this.currentLevel);
         Camera.reset();
         Particles.reset();
         Modes.reset();
+        HUD.init();
         this.hideAllScreens();
-        this.state = 'playing';
         HUD.show();
+        this.showLevelIntro();
     },
 
     openGarageOrNext() {
-        // Open garage every 2 levels (after level 2 and 4)
         if (this.currentLevel > 0 && this.currentLevel % 2 === 1 && this.currentLevel < Levels.totalLevels - 1) {
             Modes.openGarage();
         } else {
@@ -403,13 +445,10 @@ const Game = {
         if (this.state === 'gameOver') return;
         this.state = 'gameOver';
         this.scrollSpeed = 0;
-        // Celebration particles
         for (let i = 0; i < 50; i++) {
             setTimeout(() => {
                 Particles.burst(
-                    Utils.random(100, 700),
-                    Utils.random(100, 350),
-                    5,
+                    Utils.random(100, 700), Utils.random(100, 350), 5,
                     ['#FFD700', '#FF6F00', '#4CAF50', '#E91E63', '#2196F3'][Utils.randomInt(0, 4)]
                 );
             }, i * 50);
@@ -419,8 +458,8 @@ const Game = {
         SaveData.saveGameState();
         document.getElementById('gameOverStats').innerHTML =
             'YOU REACHED THE MONAL!<br><br>' +
-            'Total Distance: ' + Math.floor(this.distance) + ' m<br>' +
-            'Final Wallet: Rs. ' + Utils.formatRupees(Player.wallet) + '<br>' +
+            'Distance: ' + Math.floor(this.distance) + ' m<br>' +
+            'Wallet: Rs. ' + Utils.formatRupees(Player.wallet) + '<br>' +
             'Score: ' + Utils.formatRupees(finalScore) + '<br><br>' +
             'BOHAT HARD!';
         document.querySelector('#gameOverScreen .screen-title').textContent = 'VICTORY!';
@@ -434,7 +473,7 @@ const Game = {
     },
 
     getLevelName() {
-        const names = ["Lahore - Doodh Run", 'Lahore - Liberty Market', 'GT Road - Truck Art', 'GT Road - Toll Plaza', 'Islamabad - Signal Sprint', 'Islamabad - Monal Climb'];
+        const names = ['Mama\'s Doodh Run', 'Liberty Market Rush', 'Truck Art Gauntlet', 'Jhelum Toll Plaza', 'Signal Sprint', 'Final Climb to Monal'];
         return names[this.currentLevel] || 'Unknown';
     },
 
@@ -478,12 +517,18 @@ const Game = {
 
         if (this.state === 'menu') {
             Camera.render(ctx);
+        } else if (this.state === 'levelIntro') {
+            Camera.render(ctx);
+            Obstacles.render(ctx);
+            Player.render(ctx);
+            this.renderLevelIntro(ctx);
         } else if (this.state === 'playing' || this.state === 'paused' || this.state === 'gameOver' || this.state === 'levelComplete') {
             Camera.render(ctx);
             Obstacles.render(ctx);
             Levels.renderDecorations(ctx);
             Player.render(ctx);
             Particles.render(ctx);
+            HUD.renderProgress(ctx);
             HUD.renderMessages(ctx);
             Modes.renderOverlay(ctx);
         } else if (this.state === 'bonusStage') {
@@ -496,6 +541,35 @@ const Game = {
         }
 
         ctx.restore();
+    },
+
+    renderLevelIntro(ctx) {
+        if (this.fadeDirection > 0) {
+            this.fadeAlpha = Math.min(0.85, this.fadeAlpha + 0.03);
+        } else if (this.fadeDirection < 0) {
+            this.fadeAlpha = Math.max(0, this.fadeAlpha - 0.02);
+        }
+        ctx.fillStyle = 'rgba(0, 0, 0, ' + this.fadeAlpha + ')';
+        ctx.fillRect(0, 0, 800, 450);
+
+        if (this.fadeAlpha > 0.3) {
+            const alpha = Math.min(1, (this.fadeAlpha - 0.3) / 0.55);
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = '#FFD700';
+            ctx.font = 'bold 28px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(this.levelIntroText, 400, 190);
+
+            ctx.fillStyle = '#fff';
+            ctx.font = '14px monospace';
+            ctx.fillText(this.levelIntroSubtext, 400, 230);
+
+            ctx.fillStyle = '#888';
+            ctx.font = '11px monospace';
+            ctx.fillText('Level ' + (this.currentLevel + 1) + ' of ' + Levels.totalLevels, 400, 260);
+            ctx.textAlign = 'left';
+            ctx.globalAlpha = 1;
+        }
     },
 };
 

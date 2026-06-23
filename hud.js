@@ -1,13 +1,22 @@
 // ============================================================
-// hud.js — Hearts, wallet display, fuel gauge
+// hud.js — Hearts, wallet, fuel gauge, mission progress
 // ============================================================
 
 const HUD = {
     visible: false,
     messages: [],
     MESSAGE_DURATION: 1.5,
+    objectiveText: '',
+    levelGoal: 3000,
 
-    init() {},
+    init() {
+        const objectives = [
+            'Survive with Rs. 500', 'Find the bike key!', 'Survive the highway',
+            'Pay the toll or jump!', 'Survive the capital', 'Climb to The Monal!',
+        ];
+        this.objectiveText = objectives[Game.currentLevel] || 'Survive!';
+        this.levelGoal = (Levels.currentLevelData && Levels.currentLevelData.distance) || 3000;
+    },
 
     show() {
         this.visible = true;
@@ -17,6 +26,11 @@ const HUD = {
     hide() {
         this.visible = false;
         document.getElementById('hud').style.display = 'none';
+    },
+
+    setObjective(text, goal) {
+        this.objectiveText = text;
+        if (goal) this.levelGoal = goal;
     },
 
     update(dt) {
@@ -39,7 +53,6 @@ const HUD = {
             fuelContainer.classList.remove('visible');
         }
         document.getElementById('distanceContainer').textContent = Math.floor(Game.distance) + ' m';
-        // Show chalaan timer if active
         if (Modes.chalaan.active) {
             document.getElementById('distanceContainer').textContent =
                 Math.floor(Game.distance) + ' m | CHALAAN: ' + Math.ceil(Modes.chalaan.timer) + 's';
@@ -67,5 +80,51 @@ const HUD = {
             ctx.fillText(msg.text, 400, 120 + i * 20 - yOffset);
             ctx.restore();
         }
+    },
+
+    renderProgress(ctx) {
+        if (!this.visible) return;
+        const progress = Math.min(1, Game.distance / this.levelGoal);
+        const barX = 120;
+        const barY = 14;
+        const barW = 200;
+        const barH = 8;
+
+        // Background
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+        ctx.fillRect(barX - 2, barY - 2, barW + 4, barH + 4);
+
+        // Fill
+        const grad = ctx.createLinearGradient(barX, 0, barX + barW, 0);
+        grad.addColorStop(0, '#2196F3');
+        grad.addColorStop(1, '#00E5FF');
+        ctx.fillStyle = grad;
+        ctx.fillRect(barX, barY, barW * progress, barH);
+
+        // Border
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(barX, barY, barW, barH);
+
+        // Text
+        ctx.fillStyle = '#fff';
+        ctx.font = '9px monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(this.objectiveText, barX, barY + barH + 10);
+
+        const remaining = Math.max(0, this.levelGoal - Math.floor(Game.distance));
+        ctx.textAlign = 'right';
+        ctx.fillStyle = remaining < 500 ? '#4CAF50' : '#ccc';
+        ctx.fillText(remaining + 'm left', barX + barW, barY + barH + 10);
+
+        // Meters remaining on right side
+        ctx.textAlign = 'right';
+        ctx.fillStyle = '#FFD700';
+        ctx.font = 'bold 10px monospace';
+        const walletColor = Player.wallet > 0 ? '#FFD700' : '#ff4444';
+        ctx.fillStyle = walletColor;
+        ctx.fillText('Rs.' + Utils.formatRupees(Player.wallet), 780, 46);
+
+        ctx.textAlign = 'left';
     },
 };

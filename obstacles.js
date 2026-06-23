@@ -16,7 +16,7 @@ const Obstacles = {
     init() {
         this.groundY = 450 - 64 - 16;
         for (let i = 0; i < this.POOL_OBSTACLES; i++) {
-            this.obstacles.push({ active: false, type: '', x: 0, y: 0, w: 0, h: 0, speed: 0, triggered: false });
+            this.obstacles.push({ active: false, type: '', x: 0, y: 0, w: 0, h: 0, speed: 0, triggered: false, nearMissed: false, dogState: 'idle', dogStateTimer: 0, dogAccel: 0 });
         }
         for (let i = 0; i < this.POOL_COINS; i++) {
             this.coins.push({ active: false, type: '', x: 0, y: 0, w: 0, h: 0, bobTimer: 0 });
@@ -51,11 +51,53 @@ const Obstacles = {
             const obs = this.obstacles[i];
             if (!obs.active) continue;
             obs.x -= (scrollSpeed + obs.speed) * (dt / 60);
-            if (obs.type === 'dog' && !obs.triggered && Player.x > obs.x - 150) {
-                obs.triggered = true;
-                obs.speed = 300;
-                Audio.play('dogBark');
+
+            // Dog AI with state machine
+            if (obs.type === 'dog') {
+                obs.dogStateTimer += dt / 60;
+                const playerDist = Player.x - obs.x;
+                const distAbs = Math.abs(playerDist);
+
+                switch (obs.dogState) {
+                    case 'idle':
+                        obs.speed = 0;
+                        if (distAbs < 200 && playerDist > 0) {
+                            obs.dogState = 'alert';
+                            obs.dogStateTimer = 0;
+                            Audio.play('dogBark');
+                        }
+                        break;
+                    case 'alert':
+                        // Dog notices player, barks, prepares to chase
+                        if (obs.dogStateTimer > 0.5) {
+                            obs.dogState = 'chase';
+                            obs.dogStateTimer = 0;
+                            obs.dogAccel = 0;
+                        }
+                        break;
+                    case 'chase':
+                        // Acceleration curve: gradually speed up over 1.5 seconds
+                        obs.dogAccel = Math.min(1, obs.dogAccel + dt / 90);
+                        const chaseSpeed = 100 + obs.dogAccel * 250;
+                        obs.speed = chaseSpeed;
+                        // Chase for max 4 seconds then tire out
+                        if (obs.dogStateTimer > 4) {
+                            obs.dogState = 'tired';
+                            obs.dogStateTimer = 0;
+                        }
+                        break;
+                    case 'tired':
+                        // Slow down and give up
+                        obs.speed = Math.max(0, obs.speed - 80 * (dt / 60));
+                        if (obs.dogStateTimer > 2 || obs.speed <= 0) {
+                            obs.speed = 0;
+                            obs.dogState = 'idle';
+                            obs.dogStateTimer = 0;
+                        }
+                        break;
+                }
             }
+
             if (obs.x + obs.w < -50) obs.active = false;
         }
         for (let i = 0; i < this.coins.length; i++) {
@@ -243,8 +285,8 @@ const Obstacles = {
                 // Nose
                 ctx.fillStyle = '#1A1A1A';
                 ctx.fillRect(x + 40, y + 6, 3, 2);
-                // Eye (red angry)
-                ctx.fillStyle = '#FF0000';
+                // Eye
+                ctx.fillStyle = obs.dogState === 'chase' ? '#FF0000' : (obs.dogState === 'alert' ? '#FFAA00' : '#1A1A1A');
                 ctx.fillRect(x + 32, y + 4, 3, 3);
                 // Pupil
                 ctx.fillStyle = '#880000';
@@ -255,10 +297,11 @@ const Obstacles = {
                 ctx.fillRect(x + 35, y, 5, 5);
                 // Legs
                 ctx.fillStyle = '#7A5C12';
-                ctx.fillRect(x + 6, y + 20, 3, 8);
-                ctx.fillRect(x + 12, y + 20, 3, 8);
-                ctx.fillRect(x + 22, y + 20, 3, 8);
-                ctx.fillRect(x + 30, y + 20, 3, 8);
+                const legAnim = obs.dogState === 'chase' ? Math.sin(Date.now() * 0.01) * 3 : 0;
+                ctx.fillRect(x + 6, y + 20, 3, 8 + legAnim);
+                ctx.fillRect(x + 12, y + 20, 3, 8 - legAnim);
+                ctx.fillRect(x + 22, y + 20, 3, 8 + legAnim);
+                ctx.fillRect(x + 30, y + 20, 3, 8 - legAnim);
                 // Paws
                 ctx.fillStyle = '#5C4033';
                 ctx.fillRect(x + 5, y + 26, 5, 2);
@@ -267,7 +310,18 @@ const Obstacles = {
                 ctx.fillRect(x + 29, y + 26, 5, 2);
                 // Tail
                 ctx.fillStyle = '#8B6914';
-                ctx.fillRect(x, y + 4, 6, 3);
+                const tailWag = obs.dogState === 'chase' ? Math.sin(Date.now() * 0.015) * 4 : 0;
+                ctx.fillRect(x - 2 + tailWag, y + 4, 6, 3);
+                // State indicators
+                if (obs.dogState === 'alert') {
+                    ctx.fillStyle = '#FFAA00';
+                    ctx.font = 'bold 12px monospace';
+                    ctx.fillText('!', x + 34, y - 4);
+                } else if (obs.dogState === 'tired') {
+                    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+                    ctx.font = '8px monospace';
+                    ctx.fillText('...', x + 28, y - 2);
+                }
                 break;
 
             case 'gutter':
