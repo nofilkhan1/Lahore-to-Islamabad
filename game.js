@@ -18,6 +18,8 @@ const Game = {
     scrollSpeed: 200,
     targetScrollSpeed: 200,
     muted: false,
+    tollBarrierSpawned: false,
+    bikeKeySpawned: false,
     smsActive: false,
     smsTimer: 0,
     lastSmsDistance: 0,
@@ -110,6 +112,29 @@ const Game = {
         this.scrollSpeed = Utils.lerp(this.scrollSpeed, this.targetScrollSpeed, 0.05);
         this.distance += (this.scrollSpeed * dt) / 60;
 
+        // Check for mode triggers based on distance
+        const levelData = Levels.currentLevelData;
+        if (levelData) {
+            // Load shedding trigger
+            if (levelData.loadSheddingAt && !Modes.loadShedding.active && this.distance >= levelData.loadSheddingAt) {
+                Modes.activateLoadShedding();
+            }
+            // Chalaan chase trigger
+            if (levelData.isChaseModeActive && !Modes.chalaan.active && this.distance >= (levelData.chalaanStart || 2000)) {
+                Modes.activateChalaan();
+            }
+            // Toll barrier spawn at exact distance
+            if (levelData.hasTollBarrier && !this.tollBarrierSpawned && this.distance >= levelData.tollDistance) {
+                this.tollBarrierSpawned = true;
+                Obstacles.spawnTollBarrier();
+            }
+            // Bike key spawn at exact distance
+            if (levelData.bikeKeyAt && !this.bikeKeySpawned && this.distance >= levelData.bikeKeyAt && Player.mode === 'foot') {
+                this.bikeKeySpawned = true;
+                Obstacles.spawnBikeKeyAtDistance(levelData.bikeKeyAt);
+            }
+        }
+
         Input.update();
         Player.update(dt);
         Obstacles.update(dt);
@@ -182,9 +207,16 @@ const Game = {
             return;
         }
         if (Player.mode === 'bike') {
-            Player.demoteToFoot();
-            Obstacles.recycle(obstacle);
-            Utils.triggerScreenShake(4, 0.3);
+            if (Player.shieldCount > 0) {
+                Player.shieldCount--;
+                HUD.showMessage('SHIELD USED!', '#4CAF50');
+                Obstacles.recycle(obstacle);
+                Utils.triggerScreenShake(2, 0.15);
+            } else {
+                Player.demoteToFoot();
+                Obstacles.recycle(obstacle);
+                Utils.triggerScreenShake(4, 0.3);
+            }
         } else {
             Player.hearts--;
             Player.invincible = true;
@@ -261,6 +293,8 @@ const Game = {
         this.scrollSpeed = 200;
         this.targetScrollSpeed = 200;
         this.lastSmsDistance = 0;
+        this.tollBarrierSpawned = false;
+        this.bikeKeySpawned = false;
         Player.reset();
         Obstacles.reset();
         Levels.loadLevel(0);
@@ -363,10 +397,25 @@ const Game = {
         if (this.state === 'gameOver') return;
         this.state = 'gameOver';
         this.scrollSpeed = 0;
+        // Celebration particles
+        for (let i = 0; i < 50; i++) {
+            setTimeout(() => {
+                Particles.burst(
+                    Utils.random(100, 700),
+                    Utils.random(100, 350),
+                    5,
+                    ['#FFD700', '#FF6F00', '#4CAF50', '#E91E63', '#2196F3'][Utils.randomInt(0, 4)]
+                );
+            }, i * 50);
+        }
+        const finalScore = Math.floor(this.distance) + Player.wallet;
+        SaveData.addScore(finalScore, this.distance, Player.wallet);
+        SaveData.saveGameState();
         document.getElementById('gameOverStats').innerHTML =
             'YOU REACHED THE MONAL!<br><br>' +
             'Total Distance: ' + Math.floor(this.distance) + ' m<br>' +
-            'Final Wallet: Rs. ' + Utils.formatRupees(Player.wallet) + '<br><br>' +
+            'Final Wallet: Rs. ' + Utils.formatRupees(Player.wallet) + '<br>' +
+            'Score: ' + Utils.formatRupees(finalScore) + '<br><br>' +
             'BOHAT HARD!';
         document.querySelector('#gameOverScreen .screen-title').textContent = 'VICTORY!';
         this.showScreen('gameOverScreen');

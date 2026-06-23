@@ -23,6 +23,9 @@ const Player = {
     animFrame: 0, animTimer: 0,
     runCycle: 0,
     facingRight: true,
+    jumping: false,
+    flipX: false,
+    hasBikeKey: false,
     upgrades: {},
     speedMultiplier: 1,
     shieldCount: 0,
@@ -37,6 +40,9 @@ const Player = {
         this.y = this.groundY;
         this.velX = 0; this.velY = 0;
         this.grounded = true;
+        this.jumping = false;
+        this.flipX = false;
+        this.hasBikeKey = false;
         this.w = this.foot.w; this.h = this.foot.h;
         this.hearts = this.maxHearts;
         this.wallet = 0; this.fuel = 100; this.maxFuel = 100;
@@ -78,6 +84,9 @@ const Player = {
                 this.w = this.bike.w; this.h = this.bike.h;
                 this.groundY = 450 - this.bike.h - 16;
                 this.y = this.groundY;
+                // Increase scroll speed for bike mode (2.5x)
+                Game.targetScrollSpeed = (Levels.currentLevelData ? Levels.currentLevelData.scrollSpeed : 200) * 2.5;
+                Game.scrollSpeed = Game.targetScrollSpeed;
             }
             return;
         }
@@ -87,6 +96,7 @@ const Player = {
         const jumpPress = Input.isJumpJustPressed();
 
         let maxSpeed = this.mode === 'bike' ? this.bike.speed : this.foot.speed;
+        maxSpeed *= this.speedMultiplier;
         if (this.chaiActive) maxSpeed *= 2;
 
         if (moveRight) {
@@ -98,6 +108,7 @@ const Player = {
         } else {
             this.velX = Utils.lerp(this.velX, 0, 0.15);
         }
+        this.flipX = !this.facingRight;
 
         if (this.mode === 'foot' && Input.isDown() && this.grounded) {
             if (!this.ducking) {
@@ -126,11 +137,18 @@ const Player = {
             const jumpForce = this.mode === 'bike' ? this.bike.jumpForce : this.foot.jumpForce;
             this.velY = this.chaiActive ? jumpForce * 1.3 : jumpForce;
             this.grounded = false;
+            this.jumping = true;
             Audio.play('jump');
         }
 
         const gravity = this.mode === 'bike' ? this.bike.gravity : this.foot.gravity;
         if (!this.grounded) this.velY += gravity * (dt / 60);
+
+        // Uphill gravity for Level 3.2 (Monal climb)
+        const levelData = Levels.currentLevelData;
+        if (levelData && levelData.uphill) {
+            this.velX += (levelData.uphillForce || -50) * (dt / 60);
+        }
 
         this.x += this.velX * (dt / 60);
         this.y += this.velY * (dt / 60);
@@ -140,6 +158,7 @@ const Player = {
             this.y = this.groundY;
             this.velY = 0;
             this.grounded = true;
+            this.jumping = false;
         }
 
         this.x = Utils.clamp(this.x, 0, 800 - this.w);
@@ -176,9 +195,10 @@ const Player = {
 
     promoteToBike() {
         if (this.mode === 'bike') return;
+        this.hasBikeKey = true;
         this.mountingBike = true;
         this.mountTimer = 0.5;
-        this.fuel = 100;
+        this.fuel = this.maxFuel;
         Audio.play('bikeStart');
     },
 
@@ -190,11 +210,14 @@ const Player = {
         this.y = this.groundY;
         this.invincible = true; this.invincibleTimer = 1.5;
         this.flashTimer = 1.5; this.flashInterval = 0;
+        // Restore scroll speed for foot mode
+        Game.targetScrollSpeed = Levels.currentLevelData ? Levels.currentLevelData.scrollSpeed : 200;
+        Game.scrollSpeed = Game.targetScrollSpeed;
         Audio.play('bikeCrash');
         Particles.emitSmoke(this.x + this.w / 2, this.y);
     },
 
-    activateChaiPower() { this.chaiActive = true; this.chaiTimer = 5; },
+    activateChaiPower() { this.chaiActive = true; this.chaiTimer = 5; this.invincible = true; this.invincibleTimer = 5; },
 
     render(ctx) {
         if (this.invincible && !this.flashVisible) return;

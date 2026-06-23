@@ -45,6 +45,7 @@ const Input = {
         this.setupTouchButton('btnLeft', 'btnLeft');
         this.setupTouchButton('btnRight', 'btnRight');
         this.setupTouchButton('btnDown', 'btnDown');
+        this.setupTouchButton('btnUp', 'btnUp');
         this.setupTouchButton('btnJump', 'btnJump');
 
         // Show touch controls on touch devices

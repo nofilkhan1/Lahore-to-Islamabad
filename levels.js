@@ -9,8 +9,8 @@ const Levels = {
 
     levels: [
         { name: "Mama's Doodh Run", city: 'Lahore', distance: 3000, startWallet: 500, footOnly: true, scrollSpeed: 200, obstacleDensity: 0.6, winCondition: 'reachDistanceAndWallet', minWallet: 500 },
-        { name: 'Liberty Market Rush', city: 'Lahore', distance: 3000, startWallet: 0, footOnly: false, scrollSpeed: 220, obstacleDensity: 0.8, winCondition: 'reachDistance' },
-        { name: 'Truck Art Gauntlet', city: 'GT Road', distance: 3000, startWallet: 0, footOnly: false, scrollSpeed: 300, obstacleDensity: 1.0, winCondition: 'reachDistance' },
+        { name: 'Liberty Market Rush', city: 'Lahore', distance: 3000, startWallet: 0, footOnly: false, scrollSpeed: 220, obstacleDensity: 0.8, winCondition: 'reachDistance', bikeKeyAt: 1500, isChaseModeActive: true, chalaanStart: 2000 },
+        { name: 'Truck Art Gauntlet', city: 'GT Road', distance: 3000, startWallet: 0, footOnly: false, scrollSpeed: 300, obstacleDensity: 1.0, winCondition: 'reachDistance', loadSheddingAt: 1500 },
         { name: 'Jhelum Toll Plaza', city: 'GT Road', distance: 3500, startWallet: 0, footOnly: false, scrollSpeed: 280, obstacleDensity: 0.9, winCondition: 'reachDistance', hasTollBarrier: true, tollDistance: 2800, tollCost: 1000 },
         { name: 'Signal Sprint', city: 'Islamabad', distance: 3000, startWallet: 0, footOnly: false, scrollSpeed: 250, obstacleDensity: 0.7, winCondition: 'reachDistance' },
         { name: 'Final Climb to Monal', city: 'Islamabad', distance: 4000, startWallet: 0, footOnly: false, scrollSpeed: 200, obstacleDensity: 0.8, winCondition: 'reachDistance', uphill: true, uphillForce: -50 },
@@ -54,6 +54,35 @@ const Levels = {
         if (!this.currentLevelData) return;
         const city = this.currentLevelData.city;
         const dist = Game.distance;
+        const levelIdx = Game.currentLevel;
+
+        // Monal Restaurant at end of final level
+        if (levelIdx === 5 && dist >= 3500) {
+            const monalX = 650;
+            const monalY = 280;
+            // Building
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(monalX, monalY, 80, 50);
+            ctx.fillStyle = '#D2691E';
+            ctx.fillRect(monalX + 4, monalY + 4, 72, 42);
+            // Roof
+            ctx.fillStyle = '#CC0000';
+            ctx.fillRect(monalX - 5, monalY - 8, 90, 10);
+            // Sign
+            ctx.fillStyle = '#FFD700';
+            ctx.fillRect(monalX + 10, monalY + 6, 60, 12);
+            ctx.fillStyle = '#333';
+            ctx.font = '8px monospace';
+            ctx.fillText('THE MONAL', monalX + 14, monalY + 15);
+            // Flag
+            ctx.fillStyle = '#006400';
+            ctx.fillRect(monalX + 70, monalY - 20, 3, 14);
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(monalX + 73, monalY - 18, 8, 5);
+            ctx.fillStyle = '#006400';
+            ctx.fillRect(monalX + 73, monalY - 13, 8, 5);
+        }
+
         if (city === 'GT Road') {
             const milestone = Math.floor(dist / 1000);
             const milestoneX = 800 - ((dist % 1000) / 1000) * 800;

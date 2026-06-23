@@ -147,6 +147,10 @@ const Modes = {
         for (let i = 0; i < coins.length; i++) {
             const c = coins[i];
             if (!c.active) continue;
+            // Move bonus coins with velocity (diagonal rain)
+            if (c.velX !== undefined) c.x += c.velX * (dt / 60);
+            if (c.velY !== undefined) c.y += c.velY * (dt / 60);
+            else c.y += 100 * (dt / 60); // fallback speed
             if (Utils.checkAABB(playerBox, { x: c.x, y: c.y, w: c.w, h: c.h })) {
                 const value = c.type === 'cash100' ? 100 : c.type === 'cash50' ? 50 : 10;
                 this.bonus.collected += value;
@@ -166,6 +170,9 @@ const Modes = {
         coin.y = -20;
         coin.bobTimer = 0;
         coin.active = true;
+        // Diagonal rain - add horizontal velocity
+        coin.velX = Utils.random(-30, 30);
+        coin.velY = Utils.random(80, 120);
     },
 
     renderBonusStage(ctx) {
@@ -192,7 +199,7 @@ const Modes = {
         if (Input.isJumpJustPressed() || Input.isUp()) {
             if (Player.mtagPass) {
                 HUD.showMessage('M-TAG: FREE PASS!', '#00FF00');
-                Audio.play('collect');
+                Audio.play('collectCash');
                 this.toll.active = false;
                 this.toll.choiceMade = true;
                 Game.targetScrollSpeed = Levels.currentLevelData ? Levels.currentLevelData.scrollSpeed : 200;
@@ -302,7 +309,7 @@ const Modes = {
         this.garage.upgrades.forEach((u, i) => {
             const div = document.createElement('div');
             div.style.cssText = 'margin:8px 0; padding:10px; background:#333; border-radius:8px; cursor:pointer; border:2px solid ' + (i === this.garage.selectedIndex ? '#FF6F00' : '#555') + ';';
-            const affordable = Game.wallet >= u.cost && u.owned < u.max;
+            const affordable = Player.wallet >= u.cost && u.owned < u.max;
             div.innerHTML = '<div style="color:' + (affordable ? '#fff' : '#888') + '; font-size:14px;">' +
                 u.name + ' <span style="color:#FFD700;">Rs.' + u.cost + '</span></div>' +
                 '<div style="color:#aaa; font-size:11px;">' + u.desc + ' | Owned: ' + u.owned + '/' + u.max + '</div>';
@@ -310,18 +317,20 @@ const Modes = {
             container.appendChild(div);
         });
         const walletEl = document.getElementById('garageWallet');
-        if (walletEl) walletEl.textContent = 'Wallet: Rs. ' + Game.wallet;
+        if (walletEl) walletEl.textContent = 'Wallet: Rs. ' + Player.wallet;
     },
 
     buyUpgrade(index) {
         const u = this.garage.upgrades[index];
-        if (!u || Game.wallet < u.cost || u.owned >= u.max) return;
-        Game.wallet -= u.cost;
+        if (!u || Player.wallet < u.cost || u.owned >= u.max) return;
+        Player.wallet -= u.cost;
         u.owned++;
         // Apply upgrade immediately
         if (u.id === 'tank') Player.maxFuel = 100 + u.owned * 50;
         if (u.id === 'speed') Player.speedMultiplier = 1 + u.owned * 0.1;
-        Audio.play('collect');
+        if (u.id === 'shield') Player.shieldCount = u.owned;
+        if (u.id === 'mtag') Player.mtagPass = u.owned > 0;
+        Audio.play('collectCash');
         this.renderGarageUI();
     },
 };

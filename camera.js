@@ -13,7 +13,7 @@ const Camera = {
     cityThemes: {
         Lahore: { sky: '#FF8C42', skyGrad: '#FFB366', far: '#C4956A', mid: '#8B6914', near: '#5C4033', ground: '#8B7355', pavement: '#A0A0A0' },
         'GT Road': { sky: '#87CEEB', skyGrad: '#B0E0E6', far: '#4CAF50', mid: '#388E3C', near: '#555555', ground: '#D2B48C', pavement: '#777777' },
-        Islamabad: { sky: '#5B86E5', skyGrad: '#7BA4F0', far: '#2F4F4F', mid: '#2E8B57', near: '#708090', ground: '#6B8E23', pavement: '#A9A9A9' },
+        Islamabad: { sky: '#5B86E5', skyGrad: '#7BA4F0', far: '#2F4F4F', mid: '#2E8B57', near: '#708090', ground: '#6B8E23', pavement: '#A9A9A9', hills: '#2E4E3E', hillPeak: '#1A3A2A' },
     },
 
     init(canvas) { this.canvas = canvas; },
@@ -47,6 +47,29 @@ const Camera = {
     renderFarLayer(ctx, theme, W, H) {
         const layer = this.layers[0];
         const baseY = H * 0.35;
+        const city = Levels.currentLevelData ? Levels.currentLevelData.city : 'Lahore';
+
+        // Margalla Hills for Islamabad
+        if (city === 'Islamabad' && theme.hills) {
+            ctx.fillStyle = theme.hills;
+            ctx.globalAlpha = 0.7;
+            ctx.beginPath();
+            ctx.moveTo(0, baseY + 20);
+            ctx.lineTo(100, baseY - 60);
+            ctx.lineTo(200, baseY - 30);
+            ctx.lineTo(350, baseY - 80);
+            ctx.lineTo(500, baseY - 40);
+            ctx.lineTo(650, baseY - 70);
+            ctx.lineTo(800, baseY - 20);
+            ctx.lineTo(800, baseY + 20);
+            ctx.fill();
+            // Snow caps
+            ctx.fillStyle = '#fff';
+            ctx.globalAlpha = 0.5;
+            ctx.fillRect(345, baseY - 80, 12, 6);
+            ctx.fillRect(645, baseY - 70, 10, 5);
+        }
+
         ctx.fillStyle = theme.far;
         ctx.globalAlpha = 0.5;
         for (let i = 0; i < 20; i++) {

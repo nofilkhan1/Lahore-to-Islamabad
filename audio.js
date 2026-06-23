@@ -63,12 +63,14 @@ const Audio = {
 
         const soundDef = this.sounds[name];
 
-        // Try .ogg first, then .mp3
+        // Try .ogg first, then .mp3, then .wav
         let url = null;
         if (soundDef.ogg && this.canPlayOgg()) {
             url = soundDef.ogg;
         } else if (soundDef.mp3) {
             url = soundDef.mp3;
+        } else if (soundDef.wav) {
+            url = soundDef.wav;
         }
 
         if (!url) return;

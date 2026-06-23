@@ -83,6 +83,7 @@ const Obstacles = {
             case 'speedCamera': obs.w = 24; obs.h = 36; obs.y = this.groundY - 20; obs.speed = 0; break;
             case 'tollBarrier': obs.w = 200; obs.h = 40; obs.y = this.groundY + 24; obs.speed = 0; break;
             case 'overheadWires': obs.w = 200; obs.h = 8; obs.y = this.groundY - 30; obs.speed = 0; break;
+            case 'constructionCone': obs.w = 16; obs.h = 24; obs.y = this.groundY - 24; obs.speed = 0; break;
         }
         obs.x = 850;
         obs.active = true;
@@ -91,11 +92,11 @@ const Obstacles = {
     getObstacleTypesForLevel(level) {
         switch (level) {
             case 0: return ['dog', 'gutter', 'dog', 'gutter'];
-            case 1: return ['dog', 'gutter', 'rickshaw', 'carelessBike'];
-            case 2: return ['dog', 'gutter', 'rickshaw', 'carelessBike', 'speedCamera'];
-            case 3: return ['dog', 'gutter', 'rickshaw', 'carelessBike', 'tollBarrier'];
-            case 4: return ['rickshaw', 'carelessBike', 'speedCamera', 'gutter'];
-            case 5: return ['dog', 'gutter', 'rickshaw', 'overheadWires'];
+            case 1: return ['dog', 'gutter', 'rickshaw', 'carelessBike', 'constructionCone'];
+            case 2: return ['dog', 'gutter', 'rickshaw', 'carelessBike', 'speedCamera', 'constructionCone'];
+            case 3: return ['dog', 'gutter', 'rickshaw', 'carelessBike', 'tollBarrier', 'constructionCone'];
+            case 4: return ['rickshaw', 'carelessBike', 'speedCamera', 'gutter', 'constructionCone'];
+            case 5: return ['dog', 'gutter', 'rickshaw', 'overheadWires', 'constructionCone'];
             default: return ['dog', 'gutter'];
         }
     },
@@ -136,6 +137,31 @@ const Obstacles = {
             case 5: return ['cash50', 'cash100', 'petrol'];
             default: return ['cash10'];
         }
+    },
+
+    spawnTollBarrier() {
+        const obs = this.getInactiveObstacle();
+        if (!obs) return;
+        obs.type = 'tollBarrier';
+        obs.x = 850;
+        obs.y = this.groundY - 40;
+        obs.w = 200;
+        obs.h = 40;
+        obs.speed = 0;
+        obs.triggered = false;
+        obs.active = true;
+    },
+
+    spawnBikeKeyAtDistance(distance) {
+        const coin = this.getInactiveCoin();
+        if (!coin) return;
+        coin.type = 'bikeKey';
+        coin.w = 16;
+        coin.h = 16;
+        coin.x = 850;
+        coin.y = this.groundY - 40;
+        coin.bobTimer = Math.random() * Math.PI * 2;
+        coin.active = true;
     },
 
     getInactiveObstacle() {
@@ -403,6 +429,19 @@ const Obstacles = {
                 // Hanging droop
                 ctx.fillStyle = '#333';
                 ctx.fillRect(x + 60, y + 3, 40, 2);
+                break;
+            case 'constructionCone':
+                // Orange cone
+                ctx.fillStyle = '#FF6600';
+                ctx.beginPath();
+                ctx.moveTo(x + 8, y);
+                ctx.lineTo(x + 16, y + 24);
+                ctx.lineTo(x, y + 24);
+                ctx.fill();
+                // White stripes
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(x + 2, y + 8, 12, 3);
+                ctx.fillRect(x + 4, y + 16, 8, 3);
                 break;
         }
     },

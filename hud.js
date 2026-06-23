@@ -39,6 +39,11 @@ const HUD = {
             fuelContainer.classList.remove('visible');
         }
         document.getElementById('distanceContainer').textContent = Math.floor(Game.distance) + ' m';
+        // Show chalaan timer if active
+        if (Modes.chalaan.active) {
+            document.getElementById('distanceContainer').textContent =
+                Math.floor(Game.distance) + ' m | CHALAAN: ' + Math.ceil(Modes.chalaan.timer) + 's';
+        }
         for (let i = this.messages.length - 1; i >= 0; i--) {
             this.messages[i].timer -= dt / 60;
             if (this.messages[i].timer <= 0) this.messages.splice(i, 1);
