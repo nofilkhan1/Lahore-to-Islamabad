@@ -159,6 +159,28 @@ const Obstacles = {
         const x = Math.round(obs.x);
         const y = Math.round(obs.y);
 
+        // Try image first
+        const imgMap = {
+            'angry_dog': 'dog_angry', 'dog': 'dog',
+            'rickshaw': 'rickshaw', 'careless_rider': 'rider',
+            'bike_rider': 'bike_rider', 'speed_camera': 'speed_cam',
+            'toll_barrier': 'toll_barrier',
+            'chalaan_walker': 'chalaan_walker',
+        };
+        const imgKey = imgMap[obs.type];
+        if (imgKey && AssetLoader.has(imgKey)) {
+            if (obs.type.includes('dog')) {
+                AssetLoader.draw(ctx, imgKey, x - 5, y - 5, obs.hitbox.w + 10, obs.hitbox.h + 10);
+                return;
+            } else if (obs.type === 'toll_barrier') {
+                AssetLoader.draw(ctx, imgKey, x, y, obs.hitbox.w, 80);
+                return;
+            } else {
+                AssetLoader.draw(ctx, imgKey, x - 5, y - 5, obs.hitbox.w + 10, obs.hitbox.h + 10);
+                return;
+            }
+        }
+
         // Shadow for all obstacles
         ctx.fillStyle = 'rgba(0,0,0,0.15)';
         ctx.beginPath();
@@ -378,6 +400,17 @@ const Obstacles = {
         const x = Math.round(coin.x);
         const y = Math.round(coin.y);
         const bob = Math.sin(coin.bobTimer * 3) * 2;
+
+        // Try image first
+        const coinImgMap = {
+            'cash10': 'coin_rupee', 'cash50': 'coin_bills', 'cash500': 'coin_gold',
+            'paratha': 'paratha', 'petrol': 'petrol', 'bikeKey': 'key_bike',
+        };
+        const imgKey = coinImgMap[coin.type];
+        if (imgKey && AssetLoader.has(imgKey)) {
+            AssetLoader.draw(ctx, imgKey, x, y + bob, coin.w, coin.h);
+            return;
+        }
 
         // Sparkle glow for all collectibles
         ctx.fillStyle = 'rgba(255, 215, 0, 0.15)';

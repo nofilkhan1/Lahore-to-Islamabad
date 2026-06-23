@@ -79,6 +79,13 @@ const Modes = {
         if (!this.chalaan.active) return;
         const x = Math.round(this.chalaan.wardenX);
         const y = this.chalaan.wardenY;
+
+        // Try image first
+        const wardenKey = this.chalaan.stunned ? 'warden_angry' : 'warden';
+        if (AssetLoader.draw(ctx, wardenKey, x - 4, y - 20, 60, 70)) {
+            return;
+        }
+
         ctx.fillStyle = '#1A237E';
         ctx.fillRect(x + 8, y + 12, 32, 4);
         ctx.fillStyle = '#0D47A1';

@@ -51,6 +51,11 @@ const Game = {
         HUD.init(this.canvas);
         Particles.init();
 
+        // Load assets (non-blocking, falls back to vector if missing)
+        AssetLoader.init(() => {
+            console.log('[Game] Assets loaded or fallback ready');
+        });
+
         this.setupMenuListeners();
 
         setTimeout(() => {

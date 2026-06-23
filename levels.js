@@ -58,27 +58,32 @@ const Levels = {
             const milestone = Math.floor(dist / 1000);
             const milestoneX = 800 - ((dist % 1000) / 1000) * 800;
             if (milestoneX > 0 && milestoneX < 800) {
-                ctx.fillStyle = '#228B22';
-                ctx.fillRect(milestoneX, 280, 40, 48);
-                ctx.fillStyle = '#fff';
-                ctx.font = '8px monospace';
-                ctx.fillText('ISB', milestoneX + 6, 300);
-                ctx.fillText(Math.max(0, 200 - milestone * 50) + 'km', milestoneX + 2, 312);
+                // Try image first
+                if (!AssetLoader.draw(ctx, 'milestone', milestoneX, 280, 40, 48)) {
+                    ctx.fillStyle = '#228B22';
+                    ctx.fillRect(milestoneX, 280, 40, 48);
+                    ctx.fillStyle = '#fff';
+                    ctx.font = '8px monospace';
+                    ctx.fillText('ISB', milestoneX + 6, 300);
+                    ctx.fillText(Math.max(0, 200 - milestone * 50) + 'km', milestoneX + 2, 312);
+                }
             }
         }
         if (this.renderMilkShop && city === 'Lahore') {
             const shopX = 650, shopY = 300;
-            ctx.fillStyle = '#8B6914';
-            ctx.fillRect(shopX, shopY, 64, 56);
-            ctx.fillStyle = '#C4956A';
-            ctx.fillRect(shopX + 4, shopY + 4, 56, 48);
-            ctx.fillStyle = '#FFD700';
-            ctx.fillRect(shopX + 8, shopY + 8, 48, 14);
-            ctx.fillStyle = '#333';
-            ctx.font = '7px monospace';
-            ctx.fillText('DOODH WALA', shopX + 10, shopY + 18);
-            ctx.fillStyle = '#CD853F';
-            ctx.fillRect(shopX + 12, shopY + 30, 10, 16);
+            // Try image first
+            if (!AssetLoader.draw(ctx, 'milk_shop', shopX, shopY, 64, 56)) {
+                ctx.fillStyle = '#8B6914';
+                ctx.fillRect(shopX, shopY, 64, 56);
+                ctx.fillStyle = '#C4956A';
+                ctx.fillRect(shopX + 4, shopY + 4, 56, 48);
+                ctx.fillStyle = '#FFD700';
+                ctx.fillRect(shopX + 8, shopY + 8, 48, 14);
+                ctx.fillStyle = '#333';
+                ctx.font = '7px monospace';
+                ctx.fillText('DOODH WALA', shopX + 10, shopY + 18);
+                ctx.fillStyle = '#CD853F';
+                ctx.fillRect(shopX + 12, shopY + 30, 10, 16);
             ctx.fillRect(shopX + 26, shopY + 32, 8, 14);
         }
     },

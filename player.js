@@ -194,6 +194,19 @@ const Player = {
         const f = this.runCycle;
         const moving = Math.abs(this.velX) > 20;
 
+        // Try image first
+        if (!this.ducking) {
+            const imgKey = this.jumping ? 'player_jump' : 'player_run';
+            if (AssetLoader.draw(ctx, imgKey, x, y, this.w, this.h, this.flipX)) {
+                if (this.chaiActive) {
+                    const glow = Math.sin(Date.now() * 0.01) * 0.1 + 0.25;
+                    ctx.fillStyle = 'rgba(255, 152, 0, ' + glow + ')';
+                    ctx.fillRect(x - 6, y - 6, this.w + 12, this.h + 12);
+                }
+                return;
+            }
+        }
+
         // Shadow
         ctx.fillStyle = 'rgba(0,0,0,0.2)';
         ctx.beginPath();
@@ -282,6 +295,17 @@ const Player = {
         const x = Math.round(this.x);
         const y = Math.round(this.y);
         const wheelSpin = (Date.now() / 50) % 8;
+
+        // Try image first
+        const bikeImg = this.jumping ? 'bike_jump' : 'bike_run';
+        if (AssetLoader.draw(ctx, bikeImg, x - 5, y - 5, 70, 50, false)) {
+            if (this.chaiActive) {
+                const glow = Math.sin(Date.now() * 0.01) * 0.1 + 0.25;
+                ctx.fillStyle = 'rgba(255, 152, 0, ' + glow + ')';
+                ctx.fillRect(x - 10, y - 22, 70, 56);
+            }
+            return;
+        }
 
         // Shadow
         ctx.fillStyle = 'rgba(0,0,0,0.25)';
