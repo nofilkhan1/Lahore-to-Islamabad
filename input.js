@@ -166,6 +166,10 @@ const Input = {
         return this.keys['ArrowDown'] || this.keys['KeyS'] || this.btnDown;
     },
 
+    isDismount() {
+        return this.justPressedKeys['KeyE'];
+    },
+
     isJump() {
         return this.keys['ArrowUp'] || this.keys['KeyW'] || this.keys['Space'] || this.btnJump;
     },

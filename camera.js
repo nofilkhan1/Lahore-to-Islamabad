@@ -186,13 +186,31 @@ const Camera = {
                     ctx.arc(drawX + 5, baseY - 44, 20, 0, Math.PI * 2);
                     ctx.fill();
                 } else if (type === 2) {
-                    // Signboard (Urdu style)
-                    ctx.fillStyle = '#8B4513';
-                    ctx.fillRect(drawX, baseY - 30, 30, 20);
-                    ctx.fillStyle = '#FFD700';
-                    ctx.fillRect(drawX + 2, baseY - 28, 26, 16);
-                    ctx.fillStyle = '#CC0000';
-                    ctx.fillRect(drawX + 4, baseY - 24, 22, 8);
+                    // Billboard / signboard
+                    const city = Levels.currentLevelData ? Levels.currentLevelData.city : 'Lahore';
+                    if (city === 'GT Road') {
+                        // Parody billboard ads
+                        ctx.fillStyle = '#333';
+                        ctx.fillRect(drawX - 10, baseY - 55, 70, 40);
+                        ctx.fillStyle = '#fff';
+                        ctx.fillRect(drawX - 8, baseY - 53, 66, 36);
+                        ctx.fillStyle = '#CC0000';
+                        ctx.fillRect(drawX - 6, baseY - 51, 62, 10);
+                        ctx.fillStyle = '#fff';
+                        ctx.font = '6px monospace';
+                        const ads = ['CHAI Nahi CHALEGI!', 'SPEED KILLED THE CAT', 'PAY TOLL OR WALK', 'M-TAG = M-SAVING'];
+                        const ad = ads[i % ads.length];
+                        ctx.fillText(ad, drawX - 4, baseY - 44);
+                        ctx.fillStyle = '#333';
+                        ctx.fillRect(drawX - 6, baseY - 38, 62, 18);
+                    } else {
+                        ctx.fillStyle = '#8B4513';
+                        ctx.fillRect(drawX, baseY - 30, 30, 20);
+                        ctx.fillStyle = '#FFD700';
+                        ctx.fillRect(drawX + 2, baseY - 28, 26, 16);
+                        ctx.fillStyle = '#CC0000';
+                        ctx.fillRect(drawX + 4, baseY - 24, 22, 8);
+                    }
                 } else {
                     // Trash/vegetable crates
                     ctx.fillStyle = '#8B6914';

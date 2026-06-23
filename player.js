@@ -111,6 +111,17 @@ const Player = {
             this.y = this.groundY;
         }
 
+        // Manual dismount (risky - costs 1 heart + 2s stun)
+        if (this.mode === 'bike' && Input.isDismount() && !this.mountingBike) {
+            this.hearts = Math.max(0, this.hearts - 1);
+            this.demoteToFoot();
+            this.invincible = true;
+            this.invincibleTimer = 2.0;
+            HUD.showMessage('DISMOUNT! -1 Heart', '#ff4444');
+            Audio.play('hit');
+            Utils.triggerScreenShake(3, 0.2);
+        }
+
         if (jumpPress && this.grounded) {
             const jumpForce = this.mode === 'bike' ? this.bike.jumpForce : this.foot.jumpForce;
             this.velY = this.chaiActive ? jumpForce * 1.3 : jumpForce;

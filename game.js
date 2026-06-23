@@ -299,10 +299,14 @@ const Game = {
         this.scrollSpeed = 0;
         this.targetScrollSpeed = 0;
         Audio.play('gameOver');
+        const finalScore = Math.floor(this.distance) + Player.wallet;
+        SaveData.addScore(finalScore, this.distance, Player.wallet);
+        SaveData.saveGameState();
         document.getElementById('gameOverStats').innerHTML =
             'Distance: ' + Math.floor(this.distance) + ' m<br>' +
             'Wallet: Rs. ' + Utils.formatRupees(Player.wallet) + '<br>' +
-            'Level: ' + this.getLevelName();
+            'Level: ' + this.getLevelName() + '<br>' +
+            'Score: ' + Utils.formatRupees(finalScore);
         this.showScreen('gameOverScreen');
         HUD.hide();
     },
@@ -313,6 +317,7 @@ const Game = {
         this.scrollSpeed = 0;
         this.targetScrollSpeed = 0;
         Audio.play('levelComplete');
+        SaveData.saveGameState();
         document.getElementById('levelCompleteStats').innerHTML =
             'Distance: ' + Math.floor(this.distance) + ' m<br>' +
             'Wallet: Rs. ' + Utils.formatRupees(Player.wallet);

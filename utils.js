@@ -151,3 +151,74 @@ const Utils = {
         this.screenShake.offsetY = (Math.random() - 0.5) * 2 * currentIntensity;
     },
 };
+
+// ============================================================
+// SaveData — localStorage persistence
+// ============================================================
+const SaveData = {
+    KEY: 'lahore_to_islamabad_save',
+    LEADERBOARD_KEY: 'lahore_to_islamabad_scores',
+
+    save(data) {
+        try {
+            localStorage.setItem(this.KEY, JSON.stringify(data));
+        } catch (e) { /* storage full or private mode */ }
+    },
+
+    load() {
+        try {
+            const raw = localStorage.getItem(this.KEY);
+            return raw ? JSON.parse(raw) : null;
+        } catch (e) { return null; }
+    },
+
+    clear() {
+        localStorage.removeItem(this.KEY);
+    },
+
+    // Save game state on level complete or game over
+    saveGameState() {
+        this.save({
+            currentLevel: Game.currentLevel,
+            wallet: Player.wallet,
+            upgrades: Player.upgrades || {},
+            highScore: this.getHighScore(),
+            totalDistance: (this.load()?.totalDistance || 0) + Game.distance,
+        });
+    },
+
+    // Load saved progress (for continue button)
+    loadGameState() {
+        return this.load();
+    },
+
+    // High score / leaderboard
+    getHighScore() {
+        const data = this.load();
+        return data?.highScore || 0;
+    },
+
+    addScore(score, distance, wallet) {
+        let scores = this.getScores();
+        scores.push({
+            score,
+            distance: Math.floor(distance),
+            wallet,
+            date: new Date().toISOString().split('T')[0],
+            level: Game.currentLevel,
+        });
+        scores.sort((a, b) => b.score - a.score);
+        scores = scores.slice(0, 10); // Keep top 10
+        try {
+            localStorage.setItem(this.LEADERBOARD_KEY, JSON.stringify(scores));
+        } catch (e) { /* storage full */ }
+        return scores;
+    },
+
+    getScores() {
+        try {
+            const raw = localStorage.getItem(this.LEADERBOARD_KEY);
+            return raw ? JSON.parse(raw) : [];
+        } catch (e) { return []; }
+    },
+};
