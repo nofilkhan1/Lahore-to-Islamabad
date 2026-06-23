@@ -1,0 +1,144 @@
+// ============================================================
+// utils.js — Helper functions for Lahore to Islamabad
+// ============================================================
+
+const Utils = {
+    // --- AABB Collision Detection ---
+    checkAABB(a, b) {
+        return (
+            a.x < b.x + b.w &&
+            a.x + a.w > b.x &&
+            a.y < b.y + b.h &&
+            a.y + a.h > b.y
+        );
+    },
+
+    // --- Math Helpers ---
+    random(min, max) {
+        return Math.random() * (max - min) + min;
+    },
+
+    randomInt(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    },
+
+    lerp(a, b, t) {
+        return a + (b - a) * t;
+    },
+
+    clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    },
+
+    distance(x1, y1, x2, y2) {
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        return Math.sqrt(dx * dx + dy * dy);
+    },
+
+    // --- Format Currency ---
+    formatRupees(amount) {
+        return Math.floor(amount).toLocaleString('en-PK');
+    },
+
+    // --- Pakistani Color Palette (16-bit style) ---
+    COLORS: {
+        // Player
+        SKIN: '#E8B89D',
+        HAIR: '#2C1810',
+        SHALWAR_KAMEEZ: '#F5F5DC',
+        SANDAL: '#8B4513',
+
+        // Bike
+        BIKE_FRAME: '#333333',
+        BIKE_WHEEL: '#222222',
+        BIKE_CHROME: '#C0C0C0',
+        BIKE_SEAT: '#5C3317',
+
+        // Environment — Lahore
+        LAHORE_SKY: '#FF8C42',
+        LAHORE_BUILDING: '#C4956A',
+        LAHORE_SHOP: '#8B6914',
+        LAHORE_WIRE: '#333333',
+
+        // Environment — GT Road
+        GT_SKY: '#87CEEB',
+        GT_FIELD: '#4CAF50',
+        GT_ROAD: '#555555',
+        GT_SAND: '#D2B48C',
+
+        // Environment — Islamabad
+        ISB_SKY: '#5B86E5',
+        ISB_GREEN: '#2E8B57',
+        ISB_BUILDING: '#708090',
+        ISB_HILL: '#2F4F4F',
+
+        // Ground
+        GROUND: '#8B7355',
+        PAVEMENT: '#A0A0A0',
+
+        // UI
+        HEART_RED: '#FF0000',
+        HEART_EMPTY: '#333333',
+        GOLD: '#FFD700',
+        FUEL_GREEN: '#4CAF50',
+        FUEL_YELLOW: '#FFC107',
+        FUEL_RED: '#F44336',
+
+        // Obstacles
+        DOG_BROWN: '#8B6914',
+        DOG_DARK: '#5C4033',
+        GUTTER_DARK: '#1A1A1A',
+        RICKSHAW_GREEN: '#228B22',
+        RICKSHAW_YELLOW: '#FFD700',
+        CAMERA_WHITE: '#F0F0F0',
+        BARRIER_RED: '#CC0000',
+        BARRIER_YELLOW: '#FFD700',
+
+        // Particles
+        SPARK: '#FFFF00',
+        DUST: '#C4A882',
+        RAIN: '#87CEEB',
+    },
+
+    // --- Canvas Scaling ---
+    getCanvasScale(canvas) {
+        return canvas.width / canvas.clientWidth;
+    },
+
+    // --- Screen Shake Data ---
+    screenShake: {
+        active: false,
+        intensity: 0,
+        duration: 0,
+        elapsed: 0,
+        offsetX: 0,
+        offsetY: 0,
+    },
+
+    triggerScreenShake(intensity, duration) {
+        this.screenShake.active = true;
+        this.screenShake.intensity = intensity;
+        this.screenShake.duration = duration;
+        this.screenShake.elapsed = 0;
+    },
+
+    updateScreenShake(dt) {
+        if (!this.screenShake.active) {
+            this.screenShake.offsetX = 0;
+            this.screenShake.offsetY = 0;
+            return;
+        }
+        this.screenShake.elapsed += dt / 60;
+        if (this.screenShake.elapsed >= this.screenShake.duration) {
+            this.screenShake.active = false;
+            this.screenShake.offsetX = 0;
+            this.screenShake.offsetY = 0;
+            return;
+        }
+        const decay = 1 - (this.screenShake.elapsed / this.screenShake.duration);
+        const currentIntensity = this.screenShake.intensity * decay;
+        this.screenShake.offsetX = (Math.random() - 0.5) * 2 * currentIntensity;
+        this.screenShake.offsetY = (Math.random() - 0.5) * 2 * currentIntensity;
+    },
+};
