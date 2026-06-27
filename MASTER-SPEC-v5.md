@@ -111,9 +111,9 @@ CHAPTER 1: LAHORE
 |---|---|
 | **Mode** | FOOT ONLY (no bike ever) |
 | **Starting Wallet** | Rs. 500 |
-| **Distance** | 15,000 m |
-| **Scroll Speed** | 80 px/s (slow — morning pace, still sleepy) |
-| **Duration** | ~3 minutes |
+| **Distance** | 8,000 m |
+| **Scroll Speed** | 140 px/s |
+| **Duration** | ~1.5 minutes |
 | **Win Condition** | Reach Milk Shop AND wallet ≥ Rs. 500 |
 
 **Hazards (gentle — tutorial level):**
@@ -151,18 +151,18 @@ Ali reaches the Milk Shop.
 
 | Detail | Value |
 |---|---|
-| **Mode** | FOOT → BIKE (Bike Key at 5,000m) |
+| **Mode** | FOOT → BIKE (Bike Key at 3,000m) |
 | **Starting Wallet** | Carried over from 1.1 |
-| **Distance** | 16,500 m |
-| **Scroll Speed** | 100 px/s (city pace) |
-| **Duration** | ~2.5 minutes |
+| **Distance** | 8,000 m |
+| **Scroll Speed** | 150 px/s |
+| **Duration** | ~1.5 minutes |
 | **Win Condition** | Reach distance + collect at least Rs. 800 total |
 
 **Story Beat (intro):**
 ```
 Ali is doing delivery runs through Liberty Market.
 Packages to deliver. Crowds everywhere.
-At 5,000m: he spots Dada's CD-70 parked outside a shop.
+At 3,000m: he spots Dada's CD-70 parked outside a shop.
 Key is in the ignition. "Koi nahi dekhega..."
 [Bike Key collectible spawns]
 ```
@@ -171,7 +171,7 @@ Key is in the ignition. "Koi nahi dekhega..."
 - Qingqi Rickshaws (weaving, fast)
 - Careless bikers
 - Construction cones (Liberty Market is always under construction)
-- **Traffic Warden (Chalaan)** triggers at 6,000m — chases for 45 seconds
+- **Traffic Warden (Chalaan)** triggers at 4,000m — chases for 45 seconds
 
 **New Mechanic:** Delivery Packages
 - Random crates appear on the ground (collect them)
@@ -219,15 +219,15 @@ Mama (shadow, from behind):
 |---|---|
 | **Mode** | BIKE PRIMARY (can crash to foot) |
 | **Starting Wallet** | Carried over from Chapter 1 |
-| **Distance** | 18,000 m |
-| **Scroll Speed** | 120 px/s (highway speed) |
-| **Duration** | ~2.5 minutes |
+| **Distance** | 8,000 m |
+| **Scroll Speed** | 170 px/s |
+| **Duration** | ~1.5 minutes |
 | **Win Condition** | Survive to end of distance |
 
 **Story Beat at start:**
 ```
 0m: "GT Road. 400 kilometers. Truck ke peeche truck."
-6,000m: [LOAD SHEDDING triggers — total darkness, torch cone]
+3,000m: [LOAD SHEDDING triggers — total darkness, torch cone]
         "Bijli nahi. Pakistan mein normal hai."
 ```
 
@@ -239,7 +239,7 @@ Mama (shadow, from behind):
 
 **Economy Guarantee (Toll Fix):**
 ```
-By 12,000m:
+By 6,000m:
   → Check player wallet
   → If wallet < Rs. 1,200 → spawn extra cash bundle (Rs. 300 guaranteed drop)
   → This ensures player can ALWAYS afford the Level 2.2 toll
@@ -260,15 +260,15 @@ Ali sees the toll plaza in the distance.
 |---|---|
 | **Mode** | BIKE or FOOT |
 | **Starting Wallet** | Carried from 2.1 (GUARANTEED ≥ Rs. 1,200) |
-| **Distance** | 18,000 m |
-| **Scroll Speed** | 110 px/s |
-| **Duration** | ~3 minutes |
-| **Special** | Toll barrier at 14,000m |
-| **Win Condition** | Pass the toll AND reach 18,000m |
+| **Distance** | 8,000 m |
+| **Scroll Speed** | 180 px/s |
+| **Duration** | ~1.5 minutes |
+| **Special** | Toll barrier at 6,000m |
+| **Win Condition** | Pass the toll AND reach 8,000m |
 
 **Toll Plaza Mechanic (FIXED — Full Details):**
 
-The barrier appears at 14,000m. Scrolling stops. Player must choose:
+The barrier appears at 6,000m. Scrolling stops. Player must choose:
 
 ```
 OPTION A: Pay Rs. 1,000
@@ -336,15 +336,15 @@ Dhaba Wala: "Toh kuch nahi dekha, bhai."
 | Detail | Value |
 |---|---|
 | **Mode** | BIKE PRIMARY |
-| **Distance** | 18,000 m |
-| **Scroll Speed** | 110 px/s |
-| **Duration** | ~3 minutes |
+| **Distance** | 8,000 m |
+| **Scroll Speed** | 180 px/s |
+| **Duration** | ~1.5 minutes |
 | **Special** | Speed cameras everywhere |
 
 **Story Beat:**
 ```
 0m: "Islamabad mein rules hote hain. Aur cameras bhi."
-Every 3,000m: A speed camera flash + Rs. 500 fine (bike mode)
+Every 1,500m: A speed camera flash + Rs. 500 fine (bike mode)
 ```
 
 **New Hazard:** Traffic Signal
@@ -375,11 +375,11 @@ Text: "Yeh toh Islamabad hai. Lekin woh pahaad...?"
 | Detail | Value |
 |---|---|
 | **Mode** | FOOT (bike struggles on steep incline — forced dismount at 500m) |
-| **Distance** | 16,200 m |
-| **Scroll Speed** | 80 px/s (uphill, grinding) |
+| **Distance** | 8,000 m |
+| **Scroll Speed** | 180 px/s |
 | **Gravity Modifier** | −40 px/s² backward pull (uphill feel) |
-| **Duration** | ~3.5 minutes |
-| **Win Condition** | Reach Monal Restaurant at 16,200m |
+| **Duration** | ~1.5 minutes |
+| **Win Condition** | Reach Monal Restaurant at 8,000m |
 
 **Story Beat:**
 ```
@@ -387,7 +387,7 @@ Text: "Yeh toh Islamabad hai. Lekin woh pahaad...?"
     "Pahaad par yeh nahi chale ga."
     [Forced dismount — bike disappears into bushes]
 500m: Margalla Hills filling the entire background
-6,000m: [SMS popup] Mama: "Kahan ho? Ammi pareshan hai."
+3,000m: [SMS popup] Mama: "Kahan ho? Ammi pareshan hai."
         Ali (thought): "Ammi, main theek hoon. Main Monal ja raha hoon."
 ```
 
@@ -450,9 +450,9 @@ Truck Wala: "Yaar, Murree Bazaar seedha jao. Raat se pehle pahuncho.
 | Detail | Value |
 |---|---|
 | **Mode** | BIKE (new rented CD-70, fresh fuel) |
-| **Distance** | 20,000 m |
-| **Scroll Speed** | 90 px/s (careful mountain riding) |
-| **Duration** | ~3.5 minutes |
+| **Distance** | 8,000 m |
+| **Scroll Speed** | 160 px/s |
+| **Duration** | ~1.5 minutes |
 | **Special** | LOAD SHEDDING MODE active for entire level (mountain roads are dark) |
 
 **New Hazards:**
@@ -473,7 +473,7 @@ Truck Wala: "Yaar, Murree Bazaar seedha jao. Raat se pehle pahuncho.
 **Economy:**
 - No cash rain (mountain, no shops)
 - Chai cups give small coin bonus (Rs. 50 per collect)
-- Guarantee: if wallet < Rs. 500 at 15,000m → spawn Rs. 400 cash bundle
+- Guarantee: if wallet < Rs. 500 at 6,000m → spawn Rs. 400 cash bundle
 
 **Level End Story Beat:**
 ```
@@ -492,9 +492,9 @@ Snow on rooftops.
 | Detail | Value |
 |---|---|
 | **Mode** | FOOT (Bazaar is crowded — no bike allowed) |
-| **Distance** | 15,000 m |
-| **Scroll Speed** | 100 px/s |
-| **Duration** | ~2.5 minutes |
+| **Distance** | 8,000 m |
+| **Scroll Speed** | 160 px/s |
+| **Duration** | ~1.5 minutes |
 | **Special** | New: CROWD SURGE mechanic |
 
 **Story Beat:**
@@ -502,12 +502,12 @@ Snow on rooftops.
 0m: Ali parks the bike outside and walks into Murree Bazaar.
     "Kashmir Point: 3 km. Pindi Point: 5 km."
     The bazaar is packed with tourists.
-3,000m: [SMS popup] Mama: "Beta, kuch khaaya? Yahan barish ho rahi hai."
+2,000m: [SMS popup] Mama: "Beta, kuch khaaya? Yahan barish ho rahi hai."
                     Ali: "Ammi main theek hoon, barf dekh raha hoon!"
 ```
 
 **New Mechanic — Crowd Surge:**
-- Tourist crowds form walls every 2,000m
+- Tourist crowds form walls every 1,500m
 - Must find a gap to squeeze through (duck mechanic)
 - OR jump over the crowd (they're crouching near shop windows)
 - Miss: pushed back 200 units
@@ -567,9 +567,9 @@ Ali: "Ammi... ek kaam baaki hai."
 | Detail | Value |
 |---|---|
 | **Mode** | FOOT ONLY (bike is dead) |
-| **Distance** | 22,000 m |
-| **Scroll Speed** | 75 px/s (rough terrain) |
-| **Duration** | ~5 minutes |
+| **Distance** | 8,000 m |
+| **Scroll Speed** | 140 px/s |
+| **Duration** | ~1.5 minutes |
 | **Special** | MONSOON FLOOD MODE active |
 
 **Story Beat:**
@@ -579,7 +579,7 @@ Ali: "Ammi... ek kaam baaki hai."
         [MONSOON FLOOD MODE activates]
         Water level rises 1px/sec from the bottom
         Standing pools become deep hazards
-10,000m: [Sunrise animation over mountains — brief pause in gameplay]
+5,000m: [Sunrise animation over mountains — brief pause in gameplay]
          "Subah ho gayi. Raho. Bas thodi si aur."
 ```
 
@@ -600,18 +600,18 @@ Ali: "Ammi... ek kaam baaki hai."
 | Detail | Value |
 |---|---|
 | **Mode** | FOOT ONLY |
-| **Distance** | 18,000 m |
-| **Scroll Speed** | 60 px/s (exhaustion — slowest in game) |
+| **Distance** | 8,000 m |
+| **Scroll Speed** | 140 px/s |
 | **Gravity Modifier** | −60 px/s² backward pull (steepest uphill) |
-| **Duration** | ~5 minutes |
-| **Win Condition** | Reach the Lake (18,000m) |
+| **Duration** | ~1.5 minutes |
+| **Win Condition** | Reach the Lake (8,000m) |
 
 **Story Beat:**
 ```
 0m: "3,224 metres above sea level."
     "Your lungs hurt. Your legs hurt. Your sandals are wet."
     "Keep going."
-3,000m: [Mama calls — cutscene]
+2,000m: [Mama calls — cutscene]
         Phone icon flashes.
         Ali answers.
         Mama (breathing — she has climbed to the roof of their house):
@@ -620,13 +620,13 @@ Ali: "Ammi... ek kaam baaki hai."
         Ali: "Ammi... main bahut upar hoon."
         Mama: "Theek hai. Wapis aa jaana."
         [Ali smiles. Keeps climbing.]
-10,000m: Lightning storm begins.
+5,000m: Lightning storm begins.
          [New mechanic: Lightning strike zones — avoid the bright column appearing]
-15,000m: Snow begins to fall. Screen slowly fills with white particles.
+6,500m: Snow begins to fall. Screen slowly fills with white particles.
          "Barf. Real barf."
-17,500m: The lake becomes visible — shimmering blue at the top of the screen.
+7,500m: The lake becomes visible — shimmering blue at the top of the screen.
 
-18,000m: ARRIVE.
+8,000m: ARRIVE.
 ```
 
 **GAME ENDING:**
@@ -1066,6 +1066,32 @@ Capacitor (Android):
 | Level length | Too short originally (fixed in v4) | 2.5–5 minutes each, growing with later chapters |
 | Story file | None | `story.js` handles all dialogue and cutscenes |
 | Economy file | None | `economy.js` handles wallet guarantees |
+
+---
+
+## 🔄 IMPLEMENTATION PROMPT CHANGES (Applied)
+
+All 15 changes from `IMPLEMENTATION-PROMPT.md` have been implemented and committed.
+
+| Change | Description | Files |
+|---|---|---|
+| 1 | Home Scene cutscene (Ali's house, Mama silhouette, TV, charpoy, typewriter dialogue) | `story.js`, `game.js` |
+| 2 | All level distances standardized to 8,000m, scroll speeds increased ~40% | `levels.js` |
+| 3 | Rebuilt ground system: 3-layer per-city pavement (A: road surface, B: edge shadow, C: void) | `camera.js` |
+| 4 | Fixed background rendering: tiled layers with clipRect, no seams, per-city image config | `camera.js` |
+| 5 | Player ground alignment fixed (y=395), drop shadows added | `player.js` |
+| 6 | Obstacle ground alignment fixed (y=395) | `obstacles.js` |
+| 7 | Near-layer fast-scrolling foreground decorations per city | `camera.js` |
+| 8 | Removed duplicate wallet HUD (HTML removed, canvas-only in `renderProgress`) | `hud.js`, `index.html` |
+| 9 | Depth gradient overlay (top 0.25 → bottom 0.6 alpha) | `game.js` |
+| 10 | Better collectible rendering: pulse animation, styled shapes, ₨ symbol, glow effects | `obstacles.js` |
+| 11 | Home scene wired into game start flow (btnStart → homeScene → chapterIntro) | `game.js`, `story.js` |
+| 12 | Faster scroll speeds (40% increase across all levels) | `levels.js` |
+| 13 | Tighter obstacle spacing (intervals reduced from 120→80, 60→40) | `obstacles.js` |
+| 14 | New start screen design (Urdu title, story quote, styled buttons) | `index.html` |
+| 15 | PWA manifest + Urdu Google Font (Noto Nastaliq Urdu) | `index.html`, `manifest.json` |
+
+**Commits:** `c7ea32f` (asset integration), `9adf48d` (15 implementation prompt changes)
 
 ---
 
