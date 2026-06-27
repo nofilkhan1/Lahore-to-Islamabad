@@ -166,6 +166,8 @@ const Game = {
             }
         } else if (this.state === 'dialogue') {
             Story.update(this.deltaTime);
+        } else if (this.state === 'chapterComplete') {
+            // Just waiting for user to click NEXT LEVEL button
         }
 
         this.render();
@@ -218,6 +220,8 @@ const Game = {
         this.checkCollisions();
         this.checkNearMisses();
         Levels.checkCompletion();
+        Story.checkDistanceBeats();
+        Story.checkSms();
 
         if (this.nearMissTimer > 0) {
             this.nearMissTimer -= dt / 60;
@@ -563,6 +567,7 @@ const Game = {
         this.levelIntroTimer = 3;
         this.fadeAlpha = 1;
         this.fadeDirection = 1;
+        this.hideAllScreens();
     },
 
     pause() {
@@ -786,7 +791,7 @@ const Game = {
         } else if (this.state === 'ending') {
             Story.renderGameEnding(ctx);
             Particles.render(ctx);
-        } else if (this.state === 'playing' || this.state === 'paused' || this.state === 'gameOver' || this.state === 'levelComplete') {
+        } else if (this.state === 'playing' || this.state === 'paused' || this.state === 'gameOver' || this.state === 'levelComplete' || this.state === 'chapterComplete') {
             Camera.render(ctx);
             Obstacles.render(ctx);
             Levels.renderDecorations(ctx);

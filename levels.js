@@ -315,12 +315,12 @@ const Levels = {
             }
         }
 
-        // GT Road milestones
+        // GT Road milestones — use sign_board sprite
         if (city === 'GT Road') {
             const milestone = Math.floor(dist / 5000);
             const milestoneX = 800 - ((dist % 5000) / 5000) * 800;
             if (milestoneX > 0 && milestoneX < 800) {
-                if (!AssetLoader.draw(ctx, 'milestone', milestoneX, 280, 40, 48)) {
+                if (!AssetLoader.draw(ctx, 'sign_board', milestoneX, 260, 48, 60)) {
                     ctx.fillStyle = '#228B22';
                     ctx.fillRect(milestoneX, 280, 40, 48);
                     ctx.fillStyle = '#fff';
@@ -329,6 +329,25 @@ const Levels = {
                     ctx.fillText(Math.max(0, 200 - milestone * 25) + 'km', milestoneX + 2, 312);
                 }
             }
+            // Chai dhaba decorations along GT Road
+            if (dist > 3000 && dist % 4000 < 200) {
+                const dhabaX = 600;
+                AssetLoader.draw(ctx, 'chai_dhaba', dhabaX, 280, 80, 70);
+            }
+        }
+
+        // Islamabad: Faisal Mosque decoration in far distance
+        if (city === 'Islamabad' && dist > 2000) {
+            const mosqueX = 800 - ((dist % 8000) / 8000) * 800;
+            if (mosqueX > 0 && mosqueX < 800) {
+                AssetLoader.draw(ctx, 'bg_faisal_mosque', mosqueX - 30, 180, 100, 80);
+            }
+        }
+
+        // Toll plaza decoration at end of toll levels
+        if (this.currentLevelData.hasTollBarrier && dist >= this.currentLevelData.tollDistance - 2000) {
+            const tollX = 600;
+            AssetLoader.draw(ctx, 'toll_plaza1', tollX, 220, 100, 80);
         }
 
         // Milk shop at end of Level 1.1

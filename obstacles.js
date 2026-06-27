@@ -266,26 +266,25 @@ const Obstacles = {
         const x = Math.round(obs.x);
         const y = Math.round(obs.y);
 
-        // Try image first
-        const imgMap = {
-            'angry_dog': 'dog_angry', 'dog': 'dog',
-            'rickshaw': 'rickshaw', 'careless_rider': 'rider',
-            'bike_rider': 'bike_rider', 'speed_camera': 'speed_cam',
-            'toll_barrier': 'toll_barrier',
-            'chalaan_walker': 'chalaan_walker',
+        // Sprite-first rendering: try image, fall back to vector
+        const spriteMap = {
+            'dog_idle': 'dog_sit',
+            'dog': (obs.dogState === 'idle' || obs.dogState === 'tired') ? 'dog_sit' : (Math.floor(Date.now() / 200) % 2 === 0 ? 'dog_run1' : 'dog_run2'),
+            'angry_dog': (Math.floor(Date.now() / 150) % 2 === 0) ? 'dog_run1' : 'dog_run2',
+            'rickshaw': 'rickshaw',
+            'carelessBike': 'careless_biker',
+            'truck': 'truck',
+            'gutter': 'gutter',
+            'overheadWires': 'wires_pole',
         };
-        const imgKey = imgMap[obs.type];
+        const imgKey = typeof spriteMap[obs.type] === 'function' ? spriteMap[obs.type]() : spriteMap[obs.type];
         if (imgKey && AssetLoader.has(imgKey)) {
-            if (obs.type.includes('dog')) {
-                AssetLoader.draw(ctx, imgKey, x - 5, y - 5, obs.w + 10, obs.h + 10);
-                return;
-            } else if (obs.type === 'toll_barrier') {
-                AssetLoader.draw(ctx, imgKey, x, y, obs.w, 80);
-                return;
-            } else {
-                AssetLoader.draw(ctx, imgKey, x - 5, y - 5, obs.w + 10, obs.h + 10);
-                return;
-            }
+            let drawW = obs.w + 8, drawH = obs.h + 8;
+            let drawX = x - 4, drawY = y - 4;
+            if (obs.type === 'truck') { drawW = 80; drawH = 54; drawX = x - 4; drawY = y - 4; }
+            if (obs.type === 'gutter') { drawW = obs.w; drawH = obs.h; drawX = x; drawY = y; }
+            AssetLoader.draw(ctx, imgKey, drawX, drawY, drawW, drawH);
+            return;
         }
 
         // Shadow for all obstacles
@@ -734,10 +733,10 @@ const Obstacles = {
         const y = Math.round(coin.y);
         const bob = Math.sin(coin.bobTimer * 3) * 2;
 
-        // Try image first
+        // Try image first — map coin types to actual asset keys
         const coinImgMap = {
-            'cash10': 'coin_rupee', 'cash50': 'coin_bills', 'cash500': 'coin_gold',
-            'paratha': 'paratha', 'petrol': 'petrol', 'bikeKey': 'key_bike',
+            'cash10': 'rupee_note', 'cash50': 'rupee_note', 'cash100': 'rupee_note',
+            'cash500': 'rupee_note', 'petrol': 'petrol_bottle', 'bikeKey': 'key',
         };
         const imgKey = coinImgMap[coin.type];
         if (imgKey && AssetLoader.has(imgKey)) {

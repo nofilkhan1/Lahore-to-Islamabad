@@ -305,6 +305,10 @@ const Story = {
                 Game.levelComplete();
             }
         });
+        // Transition game to dialogue state so dialogue renders
+        Game.scrollSpeed = 0;
+        Game.targetScrollSpeed = 0;
+        Game.state = 'dialogue';
     },
 
     // Update dialogue typewriter
@@ -360,24 +364,32 @@ const Story = {
     },
 
     // Check for distance-based story beats
-    checkDistanceBeats(levelIndex) {
+    checkDistanceBeats() {
+        const chapter = Levels.currentChapter;
+        const levelInChapter = Levels.currentLevelIndex;
         for (let i = 0; i < this.distanceBeats.length; i++) {
             const beat = this.distanceBeats[i];
-            if (beat.level[0] === Levels.currentChapter && beat.level[1] === levelIndex) {
+            if (beat.level[0] === chapter && beat.level[1] === levelInChapter) {
                 if (Game.distance >= beat.distance && !beat.triggered) {
                     beat.triggered = true;
-                    return beat.lines;
+                    // Show each line as a HUD message with staggered timing
+                    beat.lines.forEach((line, idx) => {
+                        if (line) {
+                            setTimeout(() => HUD.showMessage(line, '#E8B89D'), idx * 3000);
+                        }
+                    });
                 }
             }
         }
-        return null;
     },
 
     // Check for SMS popups
-    checkSms(levelIndex) {
+    checkSms() {
+        const chapter = Levels.currentChapter;
+        const levelInChapter = Levels.currentLevelIndex;
         for (let i = 0; i < this.smsMessages.length; i++) {
             const sms = this.smsMessages[i];
-            if (sms.level[0] === Levels.currentChapter && sms.level[1] === levelIndex) {
+            if (sms.level[0] === chapter && sms.level[1] === levelInChapter) {
                 if (Game.distance >= sms.distance && !sms.triggered) {
                     sms.triggered = true;
                     this.showSms(sms.from, sms.text);
@@ -393,8 +405,8 @@ const Story = {
         if (el) {
             el.querySelector('.sender').textContent = from;
             el.querySelector('.message').textContent = text;
-            el.style.display = 'block';
-            setTimeout(() => { el.style.display = 'none'; }, 4000);
+            el.classList.add('show');
+            setTimeout(() => { el.classList.remove('show'); }, 4000);
         }
     },
 

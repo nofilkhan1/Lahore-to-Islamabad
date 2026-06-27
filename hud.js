@@ -40,14 +40,22 @@ const HUD = {
 
     update(dt) {
         if (!this.visible) return;
-        // Hearts
+        // Hearts — use image if available
         const heartContainer = document.getElementById('heartsContainer');
         if (heartContainer) {
             heartContainer.innerHTML = '';
+            const hasHeartImg = AssetLoader.has('hud_heart');
             for (let i = 0; i < Player.maxHearts; i++) {
                 const heart = document.createElement('div');
                 heart.className = 'heart' + (i < Player.hearts ? '' : ' empty');
-                heart.textContent = i < Player.hearts ? '❤️' : '🖤';
+                if (hasHeartImg) {
+                    const img = document.createElement('img');
+                    img.src = AssetLoader.get('hud_heart').src;
+                    img.style.cssText = 'width:20px;height:20px;image-rendering:pixelated;opacity:' + (i < Player.hearts ? '1' : '0.3');
+                    heart.appendChild(img);
+                } else {
+                    heart.textContent = i < Player.hearts ? '❤️' : '🖤';
+                }
                 heartContainer.appendChild(heart);
             }
         }
@@ -60,6 +68,20 @@ const HUD = {
             if (Player.fuel > 50) fuelBarFill.style.background = 'linear-gradient(90deg, #4CAF50, #8BC34A)';
             else if (Player.fuel > 20) fuelBarFill.style.background = 'linear-gradient(90deg, #FFC107, #FF9800)';
             else fuelBarFill.style.background = 'linear-gradient(90deg, #F44336, #FF5722)';
+            // Use fuel icon image if available
+            const fuelLabel = document.getElementById('fuelLabel');
+            if (fuelLabel && !fuelLabel.dataset.imgSet) {
+                const fuelImg = AssetLoader.get('hud_fuel');
+                if (fuelImg) {
+                    fuelLabel.innerHTML = '';
+                    const img = document.createElement('img');
+                    img.src = fuelImg.src;
+                    img.style.cssText = 'width:14px;height:14px;image-rendering:pixelated;vertical-align:middle;margin-right:4px';
+                    fuelLabel.appendChild(img);
+                    fuelLabel.appendChild(document.createTextNode('FUEL'));
+                    fuelLabel.dataset.imgSet = '1';
+                }
+            }
         } else {
             fuelContainer.classList.remove('visible');
         }

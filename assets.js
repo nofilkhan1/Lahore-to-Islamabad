@@ -8,53 +8,69 @@ const AssetLoader = {
     basePath: 'assets/',
     scale: 1,
 
-    // Asset manifest: all expected sprites with their paths
     manifest: {
-        // Player
-        'player_run': 'sprites/player/run.png',
-        'player_jump': 'sprites/player/jump.png',
-        'player_slide': 'sprites/player/slide.png',
-        'player_hit': 'sprites/player/hit.png',
-        'bike_run': 'sprites/bike/run.png',
-        'bike_jump': 'sprites/bike/jump.png',
+        // Player (foot mode)
+        'player_idle': 'sprites/player/foot_idle.png',
+        'player_run': 'sprites/player/foot_run_01.png',
+        'player_run2': 'sprites/player/foot_run_02.png',
+        'player_run_speed': 'sprites/player/foot_run_speed.png',
+        'player_jump': 'sprites/player/foot_jump.png',
+        'player_flight': 'sprites/player/foot_flight.png',
+        'player_duck': 'sprites/player/foot_duck.png',
+        'player_hurt': 'sprites/player/foot_hurt.png',
+
+        // Bike
+        'bike_idle': 'sprites/bike/bike_idle.png',
+        'bike_run': 'sprites/bike/bike_run_01.png',
+        'bike_run2': 'sprites/bike/bike_run_02.png',
+        'bike_jump': 'sprites/bike/bike_jump.png',
+        'bike_destroyed': 'sprites/bike/bike_destroyed.png',
 
         // Obstacles
-        'dog': 'sprites/obstacles/dog.png',
-        'dog_angry': 'sprites/obstacles/dog_angry.png',
-        'rickshaw': 'sprites/obstacles/rickshaw.png',
-        'rider': 'sprites/obstacles/rider.png',
-        'bike_rider': 'sprites/obstacles/bike_rider.png',
-        'speed_cam': 'sprites/obstacles/speed_camera.png',
-        'cam_flash': 'sprites/obstacles/cam_flash.png',
-        'toll_barrier': 'sprites/obstacles/toll_barrier.png',
-        'chalaan_walker': 'sprites/obstacles/chalaan_walker.png',
+        'dog_sit': 'sprites/obstacles/dog_sit.png',
+        'dog_run1': 'sprites/obstacles/dog_run_01.png',
+        'dog_run2': 'sprites/obstacles/dog_run_02.png',
+        'rickshaw': 'sprites/obstacles/rickshaw_01.png',
+        'truck': 'sprites/obstacles/truck.png',
+        'careless_biker': 'sprites/obstacles/careless_biker.png',
+        'gutter': 'sprites/obstacles/gutter.png',
+        'wires_pole': 'sprites/obstacles/wires_pole.png',
 
         // Collectibles
-        'coin_rupee': 'sprites/collectibles/coin_rupee.png',
-        'coin_bills': 'sprites/collectibles/coin_bills.png',
-        'coin_gold': 'sprites/collectibles/coin_gold.png',
-        'key_bike': 'sprites/collectibles/key_bike.png',
-        'petrol': 'sprites/collectibles/petrol.png',
-        'paratha': 'sprites/collectibles/paratha.png',
+        'rupee_note': 'sprites/collectibles/rupee_note.png',
+        'key': 'sprites/collectibles/key.png',
+        'petrol_bottle': 'sprites/collectibles/petrol_bottle.png',
 
         // Decorations
-        'milestone': 'sprites/decorations/milestone.png',
-        'milestone_isb': 'sprites/decorations/milestone_isb.png',
         'milk_shop': 'sprites/decorations/milk_shop.png',
-        'cart': 'sprites/decorations/cart.png',
-        'bakra': 'sprites/decorations/bakra.png',
-        'tollbooth': 'sprites/decorations/tollbooth.png',
-        'lightpoles': 'sprites/decorations/lightpoles.png',
+        'chai_dhaba': 'sprites/decorations/chai_ka_dhaba.png',
+        'sign_board': 'sprites/decorations/sign_board.png',
+        'toll_plaza1': 'sprites/decorations/toll_plaza_01.png',
+        'toll_plaza2': 'sprites/decorations/toll_plaza_02.png',
 
-        // Special mode
-        'warden': 'sprites/special/warden.png',
-        'warden_angry': 'sprites/special/warden_angry.png',
-        'bribe_cash': 'sprites/special/bribe_cash.png',
+        // Backgrounds — Lahore
+        'bg_lahore_far': 'bg/lahore_layer 1.png',
+        'bg_lahore_near': 'bg/lahore_layer 2.png',
 
-        // Particles
-        'spark': 'sprites/particles/spark.png',
-        'rain': 'sprites/particles/rain.png',
-        'dust': 'sprites/particles/dust.png',
+        // Backgrounds — GT Road
+        'bg_gtroad_far': 'bg/GT_road layer 1.png',
+        'bg_gtroad_mid': 'sprites/special/GT_road layer 2.png',
+        'bg_gtroad_near': 'sprites/special/GT_road layer 3.png',
+
+        // Backgrounds — Islamabad
+        'bg_isb_far': 'bg/islamabad_layer 1.png',
+        'bg_isb_mid': 'sprites/special/islamabad_layer 2.png',
+        'bg_isb_near': 'sprites/special/islamabad_layer 3.png',
+        'bg_margalla': 'bg/margala_hills.png',
+        'bg_faisal_mosque': 'bg/faisal_mosque.png',
+        'bg_sky_scrapper': 'bg/sky_scrapper.png',
+
+        // HUD
+        'hud_heart': 'hud/heart icon.png',
+        'hud_fuel': 'hud/fuel icon.png',
+
+        // Special
+        'rain_drop': 'sprites/special/rain drop.png',
     },
 
     // Initialize: load all assets, call onComplete when done

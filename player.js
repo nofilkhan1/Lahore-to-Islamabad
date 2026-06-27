@@ -277,11 +277,27 @@ const Player = {
         const y = Math.round(this.y);
         const f = this.runCycle;
         const moving = Math.abs(this.velX) > 20;
+        const speed = Math.abs(this.velX) > 150;
 
-        // Try image first
+        // Try image first — select best sprite for current state
         if (!this.ducking) {
-            const imgKey = this.jumping ? 'player_jump' : 'player_run';
+            let imgKey;
+            if (this.hitFlash > 0) imgKey = 'player_hurt';
+            else if (this.jumping) imgKey = 'player_flight';
+            else if (speed) imgKey = 'player_run_speed';
+            else if (moving) imgKey = (Math.floor(this.animFrame) % 2 === 0) ? 'player_run' : 'player_run2';
+            else imgKey = 'player_idle';
+
             if (AssetLoader.draw(ctx, imgKey, x, y, this.w, this.h, this.flipX)) {
+                if (this.chaiActive) {
+                    const glow = Math.sin(Date.now() * 0.01) * 0.1 + 0.25;
+                    ctx.fillStyle = 'rgba(255, 152, 0, ' + glow + ')';
+                    ctx.fillRect(x - 6, y - 6, this.w + 12, this.h + 12);
+                }
+                return;
+            }
+        } else {
+            if (AssetLoader.draw(ctx, 'player_duck', x, y, this.w, this.h, this.flipX)) {
                 if (this.chaiActive) {
                     const glow = Math.sin(Date.now() * 0.01) * 0.1 + 0.25;
                     ctx.fillStyle = 'rgba(255, 152, 0, ' + glow + ')';
@@ -384,10 +400,13 @@ const Player = {
     renderBike(ctx) {
         const x = Math.round(this.x);
         const y = Math.round(this.y);
-        const wheelSpin = (Date.now() / 50) % 8;
 
-        // Try image first
-        const bikeImg = this.jumping ? 'bike_jump' : 'bike_run';
+        // Try image first — select best sprite for current state
+        let bikeImg;
+        if (this.hitFlash > 0) bikeImg = 'bike_destroyed';
+        else if (this.jumping) bikeImg = 'bike_jump';
+        else bikeImg = (Math.floor(this.animFrame) % 2 === 0) ? 'bike_run' : 'bike_run2';
+
         if (AssetLoader.draw(ctx, bikeImg, x - 5, y - 5, 70, 50, false)) {
             if (this.chaiActive) {
                 const glow = Math.sin(Date.now() * 0.01) * 0.1 + 0.25;
