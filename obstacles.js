@@ -277,13 +277,13 @@ const Obstacles = {
         const imgKey = imgMap[obs.type];
         if (imgKey && AssetLoader.has(imgKey)) {
             if (obs.type.includes('dog')) {
-                AssetLoader.draw(ctx, imgKey, x - 5, y - 5, obs.hitbox.w + 10, obs.hitbox.h + 10);
+                AssetLoader.draw(ctx, imgKey, x - 5, y - 5, obs.w + 10, obs.h + 10);
                 return;
             } else if (obs.type === 'toll_barrier') {
-                AssetLoader.draw(ctx, imgKey, x, y, obs.hitbox.w, 80);
+                AssetLoader.draw(ctx, imgKey, x, y, obs.w, 80);
                 return;
             } else {
-                AssetLoader.draw(ctx, imgKey, x - 5, y - 5, obs.hitbox.w + 10, obs.hitbox.h + 10);
+                AssetLoader.draw(ctx, imgKey, x - 5, y - 5, obs.w + 10, obs.h + 10);
                 return;
             }
         }
@@ -705,8 +705,8 @@ const Obstacles = {
                 ctx.fillStyle = 'rgba(255, 235, 59, 0.2)';
                 ctx.fillRect(x, y, 100, 40);
                 // Lightning bolt
-                const flashOn = Math.floor(Date.now() / 300) % 2 === 0;
-                if (flashOn) {
+                const lightningFlash = Math.floor(Date.now() / 300) % 2 === 0;
+                if (lightningFlash) {
                     ctx.fillStyle = '#FFD700';
                     ctx.fillRect(x + 45, y, 10, 15);
                     ctx.fillRect(x + 35, y + 12, 10, 15);

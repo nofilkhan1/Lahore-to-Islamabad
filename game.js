@@ -506,7 +506,9 @@ const Game = {
         this.nextChalaanAt = 0;
         Player.resetForNewLevel();
         Obstacles.reset();
-        Levels.loadLevel(levelIndex, 0);
+        // Determine levelInChapter from levelIndex
+        const levelInChapter = levelIndex % 2;
+        Levels.loadLevel(this.currentChapter, levelInChapter);
         Camera.reset();
         Particles.reset();
         Modes.reset();
@@ -636,7 +638,9 @@ const Game = {
         this.nextChalaanAt = 0;
         Player.resetForNewLevel();
         Obstacles.reset();
-        Levels.loadLevel(this.currentLevel, 0);
+        this.currentChapter = Math.floor(this.currentLevel / 2);
+        const levelInChapter = this.currentLevel % 2;
+        Levels.loadLevel(this.currentChapter, levelInChapter);
         Camera.reset();
         Particles.reset();
         Modes.reset();

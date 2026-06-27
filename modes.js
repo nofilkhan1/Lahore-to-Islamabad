@@ -343,7 +343,7 @@ const Modes = {
         this.garage.upgrades.forEach(u => {
             Player.upgrades[u.id] = u.owned;
         });
-        Game.showScreen('none');
+        Game.hideAllScreens();
         Game.continueAfterLevel();
     },
 
