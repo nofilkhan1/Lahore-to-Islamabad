@@ -30,8 +30,8 @@ const Economy = {
         const chapter = Levels.currentChapter;
         const level = Levels.currentLevelIndex;
 
-        // Toll guarantee — Level 2.1 at 12,000m
-        if (chapter === 1 && level === 0 && Game.distance >= 12000) {
+        // Toll guarantee — Level 2.1 at 5,000m
+        if (chapter === 1 && level === 0 && Game.distance >= 5000) {
             if (Player.wallet < 1200 && !this.guaranteeSpawned['toll_prep']) {
                 this.guaranteeSpawned['toll_prep'] = true;
                 this.spawnGuaranteeCash(300, 'Toll prep: Rs. 300');
