@@ -23,6 +23,7 @@ const Player = {
     mountingBike: false, mountTimer: 0,
     animFrame: 0, animTimer: 0,
     runCycle: 0,
+    wheelSpin: 0,
     facingRight: true,
     jumping: false,
     flipX: false,
@@ -229,6 +230,7 @@ const Player = {
             this.animTimer = 0;
             this.animFrame = (this.animFrame + 1) % 4;
             if (Math.abs(this.velX) > 20) this.runCycle = (this.runCycle + 1) % 4;
+            if (this.onBike && Math.abs(this.velX) > 10) this.wheelSpin += 0.5;
         }
 
         // Emit dust when running on ground
@@ -443,7 +445,7 @@ const Player = {
         ctx.strokeStyle = '#888';
         ctx.lineWidth = 1;
         for (let i = 0; i < 4; i++) {
-            const angle = (wheelSpin + i * 2) * 0.4;
+            const angle = (this.wheelSpin + i * 2) * 0.4;
             ctx.beginPath();
             ctx.moveTo(x + 14, y + 40);
             ctx.lineTo(x + 14 + Math.cos(angle) * 8, y + 40 + Math.sin(angle) * 8);
@@ -461,7 +463,7 @@ const Player = {
         ctx.fill();
         ctx.strokeStyle = '#888';
         for (let i = 0; i < 4; i++) {
-            const angle = (wheelSpin + i * 2) * 0.4;
+            const angle = (this.wheelSpin + i * 2) * 0.4;
             ctx.beginPath();
             ctx.moveTo(x + 50, y + 40);
             ctx.lineTo(x + 50 + Math.cos(angle) * 8, y + 40 + Math.sin(angle) * 8);

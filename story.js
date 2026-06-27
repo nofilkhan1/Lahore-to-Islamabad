@@ -142,7 +142,7 @@ const Story = {
                 '"Par yeh pahaadiyan... Murree aur kitna dur hai?"',
             ],
             chapterComplete: true,
-            nextChapter: 4,
+            nextChapter: 3,
         },
         // Level 4.1 — Night Ride
         {
@@ -160,7 +160,7 @@ const Story = {
                 '"Aage kya hai?"',
             ],
             chapterComplete: true,
-            nextChapter: 5,
+            nextChapter: 4,
         },
         // Level 5.1 — Kaghan Valley
         {

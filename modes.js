@@ -238,7 +238,8 @@ const Modes = {
     updateToll(dt) {
         if (!this.toll.active || this.toll.choiceMade) return;
         if (Input.isJumpJustPressed() || Input.isUp()) {
-            const tollCost = Player.mtagPass ? 0 : (this.toll.reduced ? 500 : 1000);
+            const tollObs = Obstacles.getActive().find(o => o.active && o.type === 'tollBarrier');
+            const tollCost = Player.mtagPass ? 0 : (tollObs && tollObs.tollReduced ? 500 : 1000);
             if (Player.mtagPass) {
                 HUD.showMessage('M-TAG: FREE PASS!', '#00FF00');
                 Audio.play('collectCash');
@@ -280,7 +281,8 @@ const Modes = {
         ctx.fillText('TOLL PLAZA', 400, 185);
         ctx.fillStyle = '#fff';
         ctx.font = '12px monospace';
-        const tollCost = Player.mtagPass ? 0 : (this.toll.reduced ? 500 : 1000);
+        const tollObsRender = Obstacles.getActive().find(o => o.active && o.type === 'tollBarrier');
+        const tollCost = Player.mtagPass ? 0 : (tollObsRender && tollObsRender.tollReduced ? 500 : 1000);
         ctx.fillText('Press JUMP to pay Rs. ' + tollCost, 400, 215);
         ctx.fillText('OR jump over the barrier at full speed!', 400, 235);
         ctx.fillStyle = '#aaa';

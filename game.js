@@ -8,6 +8,7 @@ const Game = {
     scale: 1,
     state: 'loading',
     currentLevel: 0,
+    currentChapter: 0,
     lastTimestamp: 0,
     deltaTime: 0,
     FPS: 0,
@@ -83,7 +84,7 @@ const Game = {
         Obstacles.init();
         Levels.init();
         Modes.init();
-        HUD.init(this.canvas);
+        HUD.init();
         Particles.init();
         Story.init();
         Economy.init();
@@ -166,8 +167,14 @@ const Game = {
             }
         } else if (this.state === 'homeScene') {
             Story.updateHomeScene(this.deltaTime);
+            if (Input.isJumpJustPressed()) {
+                Story.advanceHomeDialogue();
+            }
         } else if (this.state === 'dialogue') {
             Story.update(this.deltaTime);
+            if (Input.isJumpJustPressed()) {
+                Story.advanceDialogue();
+            }
         } else if (this.state === 'chapterComplete') {
             // Just waiting for user to click NEXT LEVEL button
         }
@@ -529,10 +536,11 @@ const Game = {
         this.state = 'chapterComplete';
         this.scrollSpeed = 0;
         this.targetScrollSpeed = 0;
+        this.currentChapter = nextChapter;
         Audio.play('levelComplete');
         SaveData.saveGameState();
         document.getElementById('levelCompleteStats').innerHTML =
-            'Chapter ' + this.currentChapter + ' Complete!<br>' +
+            'Chapter ' + (nextChapter) + ' Complete!<br>' +
             'Wallet: Rs. ' + Utils.formatRupees(Player.wallet);
         this.showScreen('levelCompleteScreen');
         HUD.hide();
@@ -683,6 +691,9 @@ const Game = {
                 );
             }, i * 50);
         }
+        setTimeout(() => {
+            this.showScreen('gameEndingScreen');
+        }, 4000);
     },
 
     startBonusStage() {
@@ -757,6 +768,8 @@ const Game = {
         this.canvas.addEventListener('click', () => {
             if (this.state === 'dialogue') {
                 Story.advanceDialogue();
+            } else if (this.state === 'homeScene') {
+                Story.advanceHomeDialogue();
             }
         });
         this.populateHighscore();

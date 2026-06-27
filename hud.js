@@ -11,6 +11,7 @@ const HUD = {
     smsMessages: [],
     smsTimer: 0,
     currentSMS: null,
+    heartElements: [],
 
     init() {
         const levelData = Levels.currentLevelData;
@@ -20,6 +21,26 @@ const HUD = {
         } else {
             this.objectiveText = 'Survive!';
             this.levelGoal = 3000;
+        }
+        // Create heart elements once
+        const heartContainer = document.getElementById('heartsContainer');
+        if (heartContainer && this.heartElements.length === 0) {
+            heartContainer.innerHTML = '';
+            const hasHeartImg = AssetLoader.has('hud_heart');
+            for (let i = 0; i < 5; i++) {
+                const heart = document.createElement('div');
+                heart.className = 'heart';
+                if (hasHeartImg) {
+                    const img = document.createElement('img');
+                    img.src = AssetLoader.get('hud_heart').src;
+                    img.style.cssText = 'width:20px;height:20px;image-rendering:pixelated;';
+                    heart.appendChild(img);
+                } else {
+                    heart.textContent = '❤️';
+                }
+                heartContainer.appendChild(heart);
+                this.heartElements.push(heart);
+            }
         }
     },
 
@@ -40,23 +61,15 @@ const HUD = {
 
     update(dt) {
         if (!this.visible) return;
-        // Hearts — use image if available
-        const heartContainer = document.getElementById('heartsContainer');
-        if (heartContainer) {
-            heartContainer.innerHTML = '';
-            const hasHeartImg = AssetLoader.has('hud_heart');
-            for (let i = 0; i < Player.maxHearts; i++) {
-                const heart = document.createElement('div');
-                heart.className = 'heart' + (i < Player.hearts ? '' : ' empty');
-                if (hasHeartImg) {
-                    const img = document.createElement('img');
-                    img.src = AssetLoader.get('hud_heart').src;
-                    img.style.cssText = 'width:20px;height:20px;image-rendering:pixelated;opacity:' + (i < Player.hearts ? '1' : '0.3');
-                    heart.appendChild(img);
-                } else {
-                    heart.textContent = i < Player.hearts ? '❤️' : '🖤';
-                }
-                heartContainer.appendChild(heart);
+        // Hearts — update cached elements
+        if (this.heartElements.length > 0) {
+            for (let i = 0; i < this.heartElements.length; i++) {
+                const heart = this.heartElements[i];
+                const full = i < Player.hearts;
+                heart.className = 'heart' + (full ? '' : ' empty');
+                const img = heart.querySelector('img');
+                if (img) img.style.opacity = full ? '1' : '0.3';
+                else heart.textContent = full ? '❤️' : '🖤';
             }
         }
 
