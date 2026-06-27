@@ -1,5 +1,5 @@
 // ============================================================
-// game.js — Core game loop, state manager, collisions
+// game.js — Core game loop, state manager, chapter machine
 // ============================================================
 
 const Game = {
@@ -29,6 +29,45 @@ const Game = {
     fadeAlpha: 1,
     fadeDirection: -1,
 
+    // Chapter state machine
+    chapterState: 'CH1_PROLOGUE',
+    chapterStates: [
+        'CH1_PROLOGUE',
+        'CH1_MAMA_HOME',
+        'CH1_PLAYING',
+        'CH1_GARAGE',
+        'CH2_PROLOGUE',
+        'CH2_PLAYING',
+        'CH2_GARAGE',
+        'CH2_NARAN_PROLOGUE',
+        'CH2_NARAN_PLAYING',
+        'CH2_NARAN_GARAGE',
+        'CH3_PROLOGUE',
+        'CH3_PLAYING',
+        'CH3_GARAGE',
+        'CH4_PROLOGUE',
+        'CH4_PLAYING',
+        'CH4_GARAGE',
+        'CH4_NARAN_PROLOGUE',
+        'CH4_NARAN_PLAYING',
+        'CH4_NARAN_GARAGE',
+        'CH5_PROLOGUE',
+        'CH5_PLAYING',
+        'CH5_GARAGE',
+        'CH5_NARAN_PROLOGUE',
+        'CH5_NARAN_PLAYING',
+        'CH5_NARAN_GARAGE',
+        'GAME_ENDING',
+    ],
+
+    chapterData: [
+        { chapter: 0, name: 'Lahore', color: '#FF8F00', levels: [0, 1] },
+        { chapter: 1, name: 'GT Road', color: '#F57F17', levels: [2, 3] },
+        { chapter: 2, name: 'Islamabad', color: '#2E7D32', levels: [4, 5] },
+        { chapter: 3, name: 'Murree', color: '#1565C0', levels: [6, 7] },
+        { chapter: 4, name: 'Naran Valley', color: '#4A148C', levels: [8, 9] },
+    ],
+
     init() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
@@ -46,6 +85,8 @@ const Game = {
         Modes.init();
         HUD.init(this.canvas);
         Particles.init();
+        Story.init();
+        Economy.init();
 
         const totalAssets = Object.keys(AssetLoader.manifest).length;
         let loadedAssets = 0;
@@ -117,6 +158,17 @@ const Game = {
                 this.fadeAlpha = 1;
                 this.fadeDirection = -1;
             }
+        } else if (this.state === 'chapterIntro') {
+            this.levelIntroTimer -= this.deltaTime / 60;
+            if (this.levelIntroTimer <= 0) {
+                Story.startChapter(this.currentChapter);
+            }
+        } else if (this.state === 'dialogue') {
+            Story.updateDialogue(this.deltaTime);
+        } else if (this.state === 'mamaScene') {
+            Story.updateMamaScene(this.deltaTime);
+        } else if (this.state === 'ending') {
+            Story.updateEnding(this.deltaTime);
         }
 
         this.render();
@@ -129,7 +181,6 @@ const Game = {
 
         const levelData = Levels.currentLevelData;
         if (levelData) {
-            // Load shedding: triggers repeatedly at intervals
             if (levelData.loadSheddingAt && !Modes.loadShedding.active) {
                 if (!this.nextLoadSheddingAt) this.nextLoadSheddingAt = levelData.loadSheddingAt;
                 if (this.distance >= this.nextLoadSheddingAt) {
@@ -137,7 +188,6 @@ const Game = {
                     this.nextLoadSheddingAt = this.distance + (levelData.loadSheddingInterval || 8000);
                 }
             }
-            // Chalaan: triggers repeatedly at intervals
             if (levelData.isChaseModeActive && !Modes.chalaan.active) {
                 if (!this.nextChalaanAt) this.nextChalaanAt = levelData.chalaanStart || 3000;
                 if (this.distance >= this.nextChalaanAt) {
@@ -145,15 +195,16 @@ const Game = {
                     this.nextChalaanAt = this.distance + (levelData.chalaanInterval || 8000);
                 }
             }
-            // Toll barrier: single trigger
             if (levelData.hasTollBarrier && !this.tollBarrierSpawned && this.distance >= levelData.tollDistance) {
                 this.tollBarrierSpawned = true;
                 Obstacles.spawnTollBarrier();
             }
-            // Bike key: single trigger
             if (levelData.bikeKeyAt && !this.bikeKeySpawned && this.distance >= levelData.bikeKeyAt && Player.mode === 'foot') {
                 this.bikeKeySpawned = true;
                 Obstacles.spawnBikeKeyAtDistance(levelData.bikeKeyAt);
+            }
+            if (levelData.loadSheddingAlways && !Modes.loadShedding.active) {
+                Modes.activateLoadShedding();
             }
         }
 
@@ -165,6 +216,8 @@ const Game = {
         Modes.update(dt);
         HUD.update(dt);
         Utils.updateScreenShake(dt);
+        Story.updateDistanceBeats(this.distance);
+        Economy.check(this.currentLevel);
 
         this.checkCollisions();
         this.checkNearMisses();
@@ -252,6 +305,75 @@ const Game = {
             }
             return;
         }
+        if (obstacle.type === 'monkey') {
+            if (Player.fuel > 0) Player.fuel = Math.min(Player.maxFuel, Player.fuel - 20);
+            Obstacles.recycle(obstacle);
+            HUD.showMessage('Monkey stole fuel!', '#FF5722');
+            return;
+        }
+        if (obstacle.type === 'tourist') {
+            Utils.triggerScreenShake(2, 0.2);
+            HUD.showMessage('Tourist selfie stick!', '#FF9800');
+            Obstacles.recycle(obstacle);
+            return;
+        }
+        if (obstacle.type === 'flashFlood') {
+            Player.velX = -300;
+            Player.velY = -100;
+            Utils.triggerScreenShake(5, 0.4);
+            HUD.showMessage('Flash flood!', '#1565C0');
+            Player.hearts--;
+            Player.invincible = true;
+            Player.invincibleTimer = 1.5;
+            Obstacles.recycle(obstacle);
+            Audio.play('heartLoss');
+            return;
+        }
+        if (obstacle.type === 'rollingRock') {
+            Player.hearts--;
+            Player.invincible = true;
+            Player.invincibleTimer = 1.5;
+            Utils.triggerScreenShake(4, 0.3);
+            HUD.showMessage('Rock hit!', '#FF5722');
+            Obstacles.recycle(obstacle);
+            Audio.play('heartLoss');
+            return;
+        }
+        if (obstacle.type === 'mountainGoat') {
+            Player.hearts--;
+            Player.invincible = true;
+            Player.invincibleTimer = 1.5;
+            Utils.triggerScreenShake(3, 0.2);
+            HUD.showMessage('Goat attack!', '#8D6E63');
+            Obstacles.recycle(obstacle);
+            Audio.play('heartLoss');
+            return;
+        }
+        if (obstacle.type === 'icePatch') {
+            Player.velX = -150;
+            Utils.triggerScreenShake(2, 0.15);
+            HUD.showMessage('Ice! Sliding...', '#81D4FA');
+            Obstacles.recycle(obstacle);
+            return;
+        }
+        if (obstacle.type === 'narrowBridge') {
+            if (Player.mode === 'bike') {
+                Player.demoteToFoot();
+                Obstacles.recycle(obstacle);
+                HUD.showMessage('Bridge too narrow!', '#FF9800');
+            }
+            return;
+        }
+        if (obstacle.type === 'lightningZone') {
+            Player.hearts--;
+            Player.invincible = true;
+            Player.invincibleTimer = 2;
+            Utils.triggerScreenShake(6, 0.5);
+            HUD.showMessage('Lightning!', '#FFD700');
+            Obstacles.recycle(obstacle);
+            Audio.play('heartLoss');
+            return;
+        }
         if (Player.mode === 'bike') {
             if (Player.shieldCount > 0) {
                 Player.shieldCount--;
@@ -285,6 +407,7 @@ const Game = {
             case 'bikeKey': Player.promoteToBike(); Audio.play('collectKey'); HUD.showMessage('BIKE UNLOCKED!', '#4CAF50'); break;
             case 'petrol': Player.fuel = Math.min(Player.maxFuel, Player.fuel + 25); Audio.play('collectPetrol'); HUD.showMessage('+FUEL', '#4CAF50'); break;
             case 'chai': Player.activateChaiPower(); Audio.play('chaiPower'); HUD.showMessage('CHAI POWER!', '#FF9800'); break;
+            case 'hotChai': Player.activateChaiPower(); Audio.play('chaiPower'); HUD.showMessage('HOT CHAI! +Warmth', '#FF9800'); break;
             case 'jugaadRepair':
                 if (Player.wallet >= 200) {
                     Player.wallet -= 200;
@@ -307,6 +430,35 @@ const Game = {
                     HUD.showMessage('Parchi ' + Player.parchiCount + '/3', '#ccc');
                 }
                 break;
+            case 'bhutta':
+                Player.hearts = Math.min(Player.maxHearts, Player.hearts + 1);
+                Audio.play('collectCash');
+                HUD.showMessage('Bhutta! +1 Heart', '#4CAF50');
+                Particles.burst(coin.x + coin.w / 2, coin.y + coin.h / 2, 10, '#4CAF50');
+                break;
+            case 'shawl':
+                Player.shieldCount++;
+                Audio.play('collectCash');
+                HUD.showMessage('Shawl! +Shield', '#9C27B0');
+                Particles.burst(coin.x + coin.w / 2, coin.y + coin.h / 2, 10, '#9C27B0');
+                break;
+            case 'guava':
+                Player.wallet += 25;
+                Audio.play('collectCash');
+                HUD.showMessage('Guava! +Rs.25', '#4CAF50');
+                break;
+            case 'jeepToken':
+                Player.fuel = Player.maxFuel;
+                Player.wallet += 100;
+                Audio.play('collectKey');
+                HUD.showMessage('Jeep ride! +Fuel +Rs.100', '#FF9800');
+                Particles.burst(coin.x + coin.w / 2, coin.y + coin.h / 2, 15, '#FF9800');
+                break;
+            case 'delivery':
+                Player.wallet += 75;
+                Audio.play('collectCash');
+                HUD.showMessage('Delivery! +Rs.75', '#FFD700');
+                break;
         }
         Obstacles.recycleCoin(coin);
         Particles.burst(coin.x + coin.w / 2, coin.y + coin.h / 2, 8, '#FFD700');
@@ -316,6 +468,7 @@ const Game = {
         Audio.resume();
         this.state = 'playing';
         this.currentLevel = 0;
+        this.currentChapter = 0;
         this.distance = 0;
         this.scrollSpeed = 100;
         this.targetScrollSpeed = 100;
@@ -329,11 +482,12 @@ const Game = {
         this.nextChalaanAt = 0;
         Player.reset();
         Obstacles.reset();
-        Levels.loadLevel(0);
+        Levels.loadLevel(0, 0);
         Camera.reset();
         Particles.reset();
         Modes.reset();
         HUD.init();
+        Economy.init();
         this.hideAllScreens();
         HUD.show();
         this.showLevelIntro();
@@ -342,20 +496,22 @@ const Game = {
     showLevelIntro() {
         const levelData = Levels.currentLevelData;
         if (!levelData) return;
-        const names = ['Mama\'s Doodh Run', 'Liberty Market Rush', 'Truck Art Gauntlet', 'Jhelum Toll Plaza', 'Signal Sprint', 'Final Climb to Monal'];
-        const dist = levelData.distance;
-        const objectives = [
-            'Survive ' + dist + 'm with Rs. 500',
-            'Survive ' + dist + 'm — find the bike key!',
-            'Survive ' + dist + 'm on the highway',
-            'Survive ' + dist + 'm — pay the toll or jump!',
-            'Survive ' + dist + 'm through the capital',
-            'Climb ' + dist + 'm to reach The Monal!',
-        ];
-        this.levelIntroText = levelData.city + ' — ' + (names[this.currentLevel] || 'Unknown');
-        this.levelIntroSubtext = objectives[this.currentLevel] || '';
+        this.levelIntroText = levelData.city + ' — ' + levelData.name;
+        this.levelIntroSubtext = 'Survive ' + levelData.distance + 'm';
         this.state = 'levelIntro';
         this.levelIntroTimer = 2.5;
+        this.fadeAlpha = 1;
+        this.fadeDirection = 1;
+    },
+
+    showChapterIntro(chapter) {
+        const chapterInfo = this.chapterData[chapter];
+        if (!chapterInfo) return;
+        this.currentChapter = chapter;
+        this.levelIntroText = 'Chapter ' + (chapter + 1) + ': ' + chapterInfo.name;
+        this.levelIntroSubtext = Story.getChapterIntroText(chapter);
+        this.state = 'chapterIntro';
+        this.levelIntroTimer = 3;
         this.fadeAlpha = 1;
         this.fadeDirection = 1;
     },
@@ -433,7 +589,7 @@ const Game = {
         this.nextChalaanAt = 0;
         Player.resetForNewLevel();
         Obstacles.reset();
-        Levels.loadLevel(this.currentLevel);
+        Levels.loadLevel(this.currentLevel, 0);
         Camera.reset();
         Particles.reset();
         Modes.reset();
@@ -458,7 +614,7 @@ const Game = {
 
     gameWon() {
         if (this.state === 'gameOver') return;
-        this.state = 'gameOver';
+        this.state = 'ending';
         this.scrollSpeed = 0;
         for (let i = 0; i < 50; i++) {
             setTimeout(() => {
@@ -468,16 +624,7 @@ const Game = {
                 );
             }, i * 50);
         }
-        const finalScore = Math.floor(this.distance) + Player.wallet;
-        SaveData.addScore(finalScore, this.distance, Player.wallet);
-        SaveData.saveGameState();
-        document.getElementById('victoryStats').innerHTML =
-            'Distance: ' + Math.floor(this.distance) + ' m<br>' +
-            'Wallet: Rs. ' + Utils.formatRupees(Player.wallet) + '<br>' +
-            'Score: ' + Utils.formatRupees(finalScore) + '<br><br>' +
-            'BOHAT HARD!';
-        this.showScreen('victoryScreen');
-        HUD.hide();
+        Story.startEnding();
     },
 
     startBonusStage() {
@@ -487,8 +634,10 @@ const Game = {
     },
 
     getLevelName() {
-        const names = ['Mama\'s Doodh Run', 'Liberty Market Rush', 'Truck Art Gauntlet', 'Jhelum Toll Plaza', 'Signal Sprint', 'Final Climb to Monal'];
-        return names[this.currentLevel] || 'Unknown';
+        if (Levels.currentLevelData) {
+            return Levels.currentLevelData.city + ' - ' + Levels.currentLevelData.name;
+        }
+        return 'Unknown';
     },
 
     hideAllScreens() {
@@ -501,7 +650,7 @@ const Game = {
     },
 
     setupMenuListeners() {
-        document.getElementById('btnStart').onclick = () => { Audio.resume(); this.startGame(); };
+        document.getElementById('btnStart').onclick = () => { Audio.resume(); this.showChapterIntro(0); };
         document.getElementById('btnResume').onclick = () => this.resume();
         document.getElementById('btnRetry').onclick = () => { Audio.resume(); this.startGame(); };
         document.getElementById('btnMenu').onclick = () => {
@@ -531,6 +680,14 @@ const Game = {
             this.populateHighscore();
             HUD.hide();
         };
+        document.getElementById('btnEndingRetry').onclick = () => { Audio.resume(); this.startGame(); };
+        document.getElementById('btnEndingMenu').onclick = () => {
+            this.state = 'menu';
+            this.hideAllScreens();
+            this.showScreen('startScreen');
+            this.populateHighscore();
+            HUD.hide();
+        };
         this.populateHighscore();
     },
 
@@ -548,11 +705,26 @@ const Game = {
 
         if (this.state === 'menu') {
             Camera.render(ctx);
+        } else if (this.state === 'chapterIntro') {
+            Camera.render(ctx);
+            Obstacles.render(ctx);
+            Player.render(ctx);
+            this.renderChapterIntro(ctx);
         } else if (this.state === 'levelIntro') {
             Camera.render(ctx);
             Obstacles.render(ctx);
             Player.render(ctx);
             this.renderLevelIntro(ctx);
+        } else if (this.state === 'dialogue') {
+            Camera.render(ctx);
+            Obstacles.render(ctx);
+            Player.render(ctx);
+            Story.renderDialogue(ctx);
+        } else if (this.state === 'mamaScene') {
+            Story.renderMamaScene(ctx);
+        } else if (this.state === 'ending') {
+            Story.renderEnding(ctx);
+            Particles.render(ctx);
         } else if (this.state === 'playing' || this.state === 'paused' || this.state === 'gameOver' || this.state === 'levelComplete') {
             Camera.render(ctx);
             Obstacles.render(ctx);
@@ -562,6 +734,7 @@ const Game = {
             HUD.renderProgress(ctx);
             HUD.renderMessages(ctx);
             Modes.renderOverlay(ctx);
+            HUD.renderSMS(ctx);
         } else if (this.state === 'bonusStage') {
             Camera.render(ctx);
             Obstacles.render(ctx);
@@ -598,6 +771,38 @@ const Game = {
             ctx.fillStyle = '#888';
             ctx.font = '11px monospace';
             ctx.fillText('Level ' + (this.currentLevel + 1) + ' of ' + Levels.totalLevels, 400, 260);
+            ctx.textAlign = 'left';
+            ctx.globalAlpha = 1;
+        }
+    },
+
+    renderChapterIntro(ctx) {
+        if (this.fadeDirection > 0) {
+            this.fadeAlpha = Math.min(0.9, this.fadeAlpha + 0.02);
+        } else if (this.fadeDirection < 0) {
+            this.fadeAlpha = Math.max(0, this.fadeAlpha - 0.02);
+        }
+        ctx.fillStyle = 'rgba(0, 0, 0, ' + this.fadeAlpha + ')';
+        ctx.fillRect(0, 0, 800, 450);
+
+        if (this.fadeAlpha > 0.3) {
+            const alpha = Math.min(1, (this.fadeAlpha - 0.3) / 0.6);
+            ctx.globalAlpha = alpha;
+
+            const chapterInfo = this.chapterData[this.currentChapter];
+            ctx.fillStyle = chapterInfo ? chapterInfo.color : '#FFD700';
+            ctx.font = 'bold 24px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('Chapter ' + (this.currentChapter + 1), 400, 170);
+
+            ctx.fillStyle = '#FFD700';
+            ctx.font = 'bold 32px monospace';
+            ctx.fillText(chapterInfo ? chapterInfo.name : '', 400, 210);
+
+            ctx.fillStyle = '#fff';
+            ctx.font = '13px monospace';
+            ctx.fillText(this.levelIntroSubtext, 400, 260);
+
             ctx.textAlign = 'left';
             ctx.globalAlpha = 1;
         }

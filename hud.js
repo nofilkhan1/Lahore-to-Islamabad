@@ -1,5 +1,5 @@
 // ============================================================
-// hud.js — Hearts, wallet, fuel gauge, mission progress
+// hud.js — Hearts, wallet, fuel gauge, mission progress, SMS
 // ============================================================
 
 const HUD = {
@@ -8,14 +8,19 @@ const HUD = {
     MESSAGE_DURATION: 1.5,
     objectiveText: '',
     levelGoal: 3000,
+    smsMessages: [],
+    smsTimer: 0,
+    currentSMS: null,
 
     init() {
-        const objectives = [
-            'Survive with Rs. 500', 'Find the bike key!', 'Survive the highway',
-            'Pay the toll or jump!', 'Survive the capital', 'Climb to The Monal!',
-        ];
-        this.objectiveText = objectives[Game.currentLevel] || 'Survive!';
-        this.levelGoal = (Levels.currentLevelData && Levels.currentLevelData.distance) || 3000;
+        const levelData = Levels.currentLevelData;
+        if (levelData) {
+            this.objectiveText = 'Survive ' + levelData.distance + 'm';
+            this.levelGoal = levelData.distance;
+        } else {
+            this.objectiveText = 'Survive!';
+            this.levelGoal = 3000;
+        }
     },
 
     show() {
@@ -35,10 +40,16 @@ const HUD = {
 
     update(dt) {
         if (!this.visible) return;
-        for (let i = 0; i < 5; i++) {
-            const el = document.getElementById('heart' + i);
-            if (i < Player.hearts) el.classList.remove('empty');
-            else el.classList.add('empty');
+        // Hearts
+        const heartContainer = document.getElementById('heartsContainer');
+        if (heartContainer) {
+            heartContainer.innerHTML = '';
+            for (let i = 0; i < Player.maxHearts; i++) {
+                const heart = document.createElement('div');
+                heart.className = 'heart' + (i < Player.hearts ? '' : ' empty');
+                heart.textContent = i < Player.hearts ? '❤️' : '🖤';
+                heartContainer.appendChild(heart);
+            }
         }
         document.getElementById('walletAmount').textContent = Utils.formatRupees(Player.wallet);
         const fuelContainer = document.getElementById('fuelContainer');
@@ -61,10 +72,31 @@ const HUD = {
             this.messages[i].timer -= dt / 60;
             if (this.messages[i].timer <= 0) this.messages.splice(i, 1);
         }
+        // SMS timer
+        this.smsTimer -= dt / 60;
+        if (this.smsTimer <= 0 && this.currentSMS) {
+            this.hideSMS();
+        }
     },
 
     showMessage(text, color) {
         this.messages.push({ text: text, color: color || '#fff', timer: this.MESSAGE_DURATION });
+    },
+
+    showSMS(sender, message) {
+        const smsEl = document.getElementById('smsNotification');
+        if (!smsEl) return;
+        smsEl.querySelector('.sender').textContent = sender;
+        smsEl.querySelector('.message').textContent = message;
+        smsEl.classList.add('show');
+        this.currentSMS = { sender, message };
+        this.smsTimer = 5;
+    },
+
+    hideSMS() {
+        const smsEl = document.getElementById('smsNotification');
+        if (smsEl) smsEl.classList.remove('show');
+        this.currentSMS = null;
     },
 
     renderMessages(ctx) {
@@ -117,7 +149,7 @@ const HUD = {
         ctx.fillStyle = remaining < 500 ? '#4CAF50' : '#ccc';
         ctx.fillText(remaining + 'm left', barX + barW, barY + barH + 10);
 
-        // Meters remaining on right side
+        // Wallet on right side
         ctx.textAlign = 'right';
         ctx.fillStyle = '#FFD700';
         ctx.font = 'bold 10px monospace';
@@ -125,6 +157,19 @@ const HUD = {
         ctx.fillStyle = walletColor;
         ctx.fillText('Rs.' + Utils.formatRupees(Player.wallet), 780, 46);
 
+        // Chapter name
+        const chapterData = Game.chapterData[Game.currentChapter];
+        if (chapterData) {
+            ctx.textAlign = 'center';
+            ctx.fillStyle = chapterData.color;
+            ctx.font = '8px monospace';
+            ctx.fillText('Ch' + (Game.currentChapter + 1) + ': ' + chapterData.name, 400, 46);
+        }
+
         ctx.textAlign = 'left';
+    },
+
+    renderSMS(ctx) {
+        // SMS is rendered via HTML overlay, not canvas
     },
 };

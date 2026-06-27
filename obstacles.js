@@ -16,7 +16,7 @@ const Obstacles = {
     init() {
         this.groundY = 450 - 64 - 16;
         for (let i = 0; i < this.POOL_OBSTACLES; i++) {
-            this.obstacles.push({ active: false, type: '', x: 0, y: 0, w: 0, h: 0, speed: 0, triggered: false, nearMissed: false, dogState: 'idle', dogStateTimer: 0, dogAccel: 0 });
+            this.obstacles.push({ active: false, type: '', x: 0, y: 0, w: 0, h: 0, speed: 0, triggered: false, nearMissed: false, dogState: 'idle', dogStateTimer: 0, dogAccel: 0, tollReduced: false });
         }
         for (let i = 0; i < this.POOL_COINS; i++) {
             this.coins.push({ active: false, type: '', x: 0, y: 0, w: 0, h: 0, bobTimer: 0 });
@@ -117,6 +117,7 @@ const Obstacles = {
         const type = types[Utils.randomInt(0, types.length - 1)];
         obs.type = type;
         obs.triggered = false;
+        obs.tollReduced = false;
         switch (type) {
             case 'dog': obs.w = 40; obs.h = 28; obs.y = this.groundY + 36; obs.speed = 0; break;
             case 'gutter': obs.w = 48; obs.h = 16; obs.y = this.groundY + 48; obs.speed = 0; break;
@@ -126,6 +127,17 @@ const Obstacles = {
             case 'tollBarrier': obs.w = 200; obs.h = 40; obs.y = this.groundY + 24; obs.speed = 0; break;
             case 'overheadWires': obs.w = 200; obs.h = 8; obs.y = this.groundY - 30; obs.speed = 0; break;
             case 'constructionCone': obs.w = 16; obs.h = 24; obs.y = this.groundY - 24; obs.speed = 0; break;
+            case 'truck': obs.w = 64; obs.h = 48; obs.y = this.groundY + 16; obs.speed = Utils.random(30, 80); break;
+            case 'mountainGoat': obs.w = 36; obs.h = 32; obs.y = this.groundY + 32; obs.speed = 0; break;
+            case 'fallingRock': obs.w = 20; obs.h = 20; obs.y = this.groundY - 40; obs.speed = 0; break;
+            case 'monkey': obs.w = 32; obs.h = 28; obs.y = this.groundY - 30; obs.speed = 0; break;
+            case 'icePatch': obs.w = 60; obs.h = 8; obs.y = this.groundY + 56; obs.speed = 0; break;
+            case 'flashFlood': obs.w = 80; obs.h = 30; obs.y = this.groundY + 34; obs.speed = 0; break;
+            case 'rollingRock': obs.w = 24; obs.h = 24; obs.y = this.groundY + 40; obs.speed = Utils.random(100, 200); break;
+            case 'narrowBridge': obs.w = 200; obs.h = 8; obs.y = this.groundY + 56; obs.speed = 0; break;
+            case 'tourist': obs.w = 28; obs.h = 32; obs.y = this.groundY + 32; obs.speed = 0; break;
+            case 'lightningZone': obs.w = 100; obs.h = 40; obs.y = this.groundY + 24; obs.speed = 0; break;
+            case 'snowPatch': obs.w = 50; obs.h = 6; obs.y = this.groundY + 58; obs.speed = 0; break;
         }
         obs.x = 850;
         obs.active = true;
@@ -135,10 +147,14 @@ const Obstacles = {
         switch (level) {
             case 0: return ['dog', 'gutter', 'dog', 'gutter'];
             case 1: return ['dog', 'gutter', 'rickshaw', 'carelessBike', 'constructionCone'];
-            case 2: return ['dog', 'gutter', 'rickshaw', 'carelessBike', 'speedCamera', 'constructionCone'];
+            case 2: return ['dog', 'gutter', 'rickshaw', 'carelessBike', 'speedCamera', 'constructionCone', 'truck'];
             case 3: return ['dog', 'gutter', 'rickshaw', 'carelessBike', 'tollBarrier', 'constructionCone'];
             case 4: return ['rickshaw', 'carelessBike', 'speedCamera', 'gutter', 'constructionCone'];
             case 5: return ['dog', 'gutter', 'rickshaw', 'overheadWires', 'constructionCone'];
+            case 6: return ['dog', 'fallingRock', 'mountainGoat', 'snowPatch'];
+            case 7: return ['dog', 'gutter', 'tourist', 'icePatch', 'monkey'];
+            case 8: return ['dog', 'fallingRock', 'flashFlood', 'rollingRock', 'narrowBridge'];
+            case 9: return ['dog', 'fallingRock', 'flashFlood', 'lightningZone'];
             default: return ['dog', 'gutter'];
         }
     },
@@ -157,11 +173,17 @@ const Obstacles = {
             const type = types[Utils.randomInt(0, types.length - 1)];
             coin.type = type;
             switch (type) {
-                case 'cash10': case 'cash50': case 'cash100': coin.w = 12; coin.h = 16; break;
+                case 'cash10': case 'cash50': case 'cash100': case 'cash500': coin.w = 12; coin.h = 16; break;
                 case 'bikeKey': coin.w = 16; coin.h = 16; break;
                 case 'petrol': coin.w = 16; coin.h = 24; break;
                 case 'chai': coin.w = 16; coin.h = 16; break;
+                case 'hotChai': coin.w = 16; coin.h = 16; break;
                 case 'parchi': coin.w = 12; coin.h = 16; break;
+                case 'bhutta': coin.w = 16; coin.h = 16; break;
+                case 'shawl': coin.w = 16; coin.h = 16; break;
+                case 'guava': coin.w = 14; coin.h = 14; break;
+                case 'jeepToken': coin.w = 20; coin.h = 20; break;
+                case 'delivery': coin.w = 16; coin.h = 16; break;
                 default: coin.w = 12; coin.h = 16;
             }
         }
@@ -173,12 +195,16 @@ const Obstacles = {
 
     getCoinTypesForLevel(level) {
         switch (level) {
-            case 0: return ['cash10', 'cash50', 'cash10'];
-            case 1: return ['cash10', 'cash50', 'cash100', 'chai'];
+            case 0: return ['cash10', 'cash50', 'cash10', 'guava'];
+            case 1: return ['cash10', 'cash50', 'cash100', 'chai', 'delivery'];
             case 2: return ['cash10', 'cash50', 'cash100', 'petrol', 'chai'];
-            case 3: return ['cash10', 'cash50', 'cash100', 'petrol'];
+            case 3: return ['cash50', 'cash100', 'petrol', 'cash500'];
             case 4: return ['cash50', 'cash100', 'chai', 'parchi'];
             case 5: return ['cash50', 'cash100', 'petrol'];
+            case 6: return ['cash50', 'cash100', 'hotChai', 'shawl'];
+            case 7: return ['cash50', 'cash100', 'bhutta'];
+            case 8: return ['cash50', 'cash100', 'jeepToken'];
+            case 9: return ['cash50', 'cash100'];
             default: return ['cash10'];
         }
     },
@@ -499,6 +525,207 @@ const Obstacles = {
                 ctx.fillRect(x + 2, y + 8, 12, 3);
                 ctx.fillRect(x + 4, y + 16, 8, 3);
                 break;
+
+            case 'truck':
+                // Truck body
+                ctx.fillStyle = '#1565C0';
+                ctx.fillRect(x, y + 8, 48, 36);
+                // Truck art decorations
+                ctx.fillStyle = '#FFD700';
+                ctx.fillRect(x + 2, y + 10, 44, 3);
+                ctx.fillRect(x + 2, y + 39, 44, 3);
+                // Truck art flowers
+                ctx.fillStyle = '#FF6F00';
+                for (let i = 0; i < 4; i++) {
+                    ctx.fillRect(x + 6 + i * 12, y + 16, 8, 8);
+                    ctx.fillStyle = '#FFD700';
+                    ctx.fillRect(x + 8 + i * 12, y + 18, 4, 4);
+                    ctx.fillStyle = '#FF6F00';
+                }
+                // Cab
+                ctx.fillStyle = '#0D47A1';
+                ctx.fillRect(x + 48, y + 12, 16, 32);
+                // Windshield
+                ctx.fillStyle = '#81D4FA';
+                ctx.fillRect(x + 50, y + 14, 12, 10);
+                // Wheels
+                ctx.fillStyle = '#1A1A1A';
+                ctx.beginPath();
+                ctx.arc(x + 12, y + 44, 6, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(x + 36, y + 44, 6, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(x + 56, y + 44, 6, 0, Math.PI * 2);
+                ctx.fill();
+                break;
+
+            case 'mountainGoat':
+                // Body
+                ctx.fillStyle = '#8D6E63';
+                ctx.fillRect(x + 8, y + 8, 20, 16);
+                // Head
+                ctx.fillStyle = '#795548';
+                ctx.fillRect(x + 24, y + 4, 12, 10);
+                // Horns
+                ctx.fillStyle = '#D7CCC8';
+                ctx.fillRect(x + 26, y, 3, 6);
+                ctx.fillRect(x + 32, y, 3, 6);
+                // Eyes
+                ctx.fillStyle = '#1A1A1A';
+                ctx.fillRect(x + 30, y + 6, 3, 3);
+                // Legs
+                ctx.fillStyle = '#6D4C41';
+                ctx.fillRect(x + 10, y + 24, 3, 8);
+                ctx.fillRect(x + 18, y + 24, 3, 8);
+                ctx.fillRect(x + 26, y + 24, 3, 8);
+                break;
+
+            case 'fallingRock':
+                // Rock
+                ctx.fillStyle = '#795548';
+                ctx.fillRect(x + 2, y + 2, 16, 16);
+                ctx.fillStyle = '#8D6E63';
+                ctx.fillRect(x + 4, y + 4, 12, 12);
+                // Shadow
+                ctx.fillStyle = '#5D4037';
+                ctx.fillRect(x + 6, y + 6, 8, 8);
+                // Dust particles
+                ctx.fillStyle = 'rgba(139, 119, 101, 0.5)';
+                ctx.fillRect(x + 2, y + 16, 4, 3);
+                ctx.fillRect(x + 14, y + 18, 3, 2);
+                break;
+
+            case 'monkey':
+                // Body
+                ctx.fillStyle = '#795548';
+                ctx.fillRect(x + 8, y + 8, 16, 12);
+                // Head
+                ctx.fillStyle = '#8D6E63';
+                ctx.fillRect(x + 12, y, 10, 10);
+                // Face
+                ctx.fillStyle = '#D7CCC8';
+                ctx.fillRect(x + 14, y + 2, 6, 6);
+                // Eyes
+                ctx.fillStyle = '#1A1A1A';
+                ctx.fillRect(x + 15, y + 3, 2, 2);
+                ctx.fillRect(x + 19, y + 3, 2, 2);
+                // Arms (reaching for items)
+                ctx.fillStyle = '#6D4C41';
+                const armAnim = Math.sin(Date.now() * 0.01) * 3;
+                ctx.fillRect(x + 4, y + 10, 6, 3 + armAnim);
+                ctx.fillRect(x + 22, y + 10, 6, 3 - armAnim);
+                // Tail
+                ctx.fillStyle = '#5D4037';
+                ctx.fillRect(x, y + 4, 8, 2);
+                break;
+
+            case 'icePatch':
+                // Ice surface
+                ctx.fillStyle = 'rgba(179, 229, 252, 0.7)';
+                ctx.fillRect(x, y, 60, 8);
+                // Shine lines
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                ctx.fillRect(x + 5, y + 2, 20, 1);
+                ctx.fillRect(x + 30, y + 4, 15, 1);
+                ctx.fillRect(x + 10, y + 6, 10, 1);
+                break;
+
+            case 'flashFlood':
+                // Water wave
+                ctx.fillStyle = 'rgba(33, 150, 243, 0.7)';
+                ctx.fillRect(x, y, 80, 30);
+                // Wave crests
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                for (let i = 0; i < 4; i++) {
+                    const wx = x + (Date.now() * 0.03 + i * 20) % 80;
+                    ctx.fillRect(wx, y + 5, 15, 3);
+                }
+                // Debris
+                ctx.fillStyle = '#795548';
+                ctx.fillRect(x + 20, y + 15, 8, 4);
+                ctx.fillRect(x + 50, y + 20, 6, 3);
+                break;
+
+            case 'rollingRock':
+                // Rolling boulder
+                ctx.fillStyle = '#795548';
+                ctx.beginPath();
+                ctx.arc(x + 12, y + 12, 12, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#8D6E63';
+                ctx.beginPath();
+                ctx.arc(x + 12, y + 12, 8, 0, Math.PI * 2);
+                ctx.fill();
+                // Dust trail
+                ctx.fillStyle = 'rgba(139, 119, 101, 0.4)';
+                ctx.fillRect(x - 10, y + 16, 12, 4);
+                break;
+
+            case 'narrowBridge':
+                // Wooden planks
+                ctx.fillStyle = '#8D6E63';
+                ctx.fillRect(x, y, 200, 8);
+                // Plank gaps
+                ctx.fillStyle = '#5D4037';
+                for (let i = 0; i < 10; i++) {
+                    ctx.fillRect(x + i * 20 + 18, y, 2, 8);
+                }
+                // Ropes
+                ctx.strokeStyle = '#D7CCC8';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(x, y - 5);
+                ctx.lineTo(x + 200, y - 5);
+                ctx.stroke();
+                break;
+
+            case 'tourist':
+                // Person
+                ctx.fillStyle = '#1565C0';
+                ctx.fillRect(x + 6, y + 8, 16, 16);
+                // Head
+                ctx.fillStyle = '#E8B89D';
+                ctx.fillRect(x + 8, y, 12, 10);
+                // Phone (taking selfie)
+                ctx.fillStyle = '#1A1A1A';
+                ctx.fillRect(x + 22, y + 4, 6, 10);
+                // Arm with phone
+                ctx.fillStyle = '#E8B89D';
+                ctx.fillRect(x + 18, y + 6, 6, 3);
+                // Legs
+                ctx.fillStyle = '#333';
+                ctx.fillRect(x + 8, y + 24, 4, 8);
+                ctx.fillRect(x + 16, y + 24, 4, 8);
+                break;
+
+            case 'lightningZone':
+                // Warning zone
+                ctx.fillStyle = 'rgba(255, 235, 59, 0.2)';
+                ctx.fillRect(x, y, 100, 40);
+                // Lightning bolt
+                const flashOn = Math.floor(Date.now() / 300) % 2 === 0;
+                if (flashOn) {
+                    ctx.fillStyle = '#FFD700';
+                    ctx.fillRect(x + 45, y, 10, 15);
+                    ctx.fillRect(x + 35, y + 12, 10, 15);
+                    ctx.fillRect(x + 45, y + 24, 10, 16);
+                }
+                // Warning signs
+                ctx.fillStyle = '#FF0000';
+                ctx.font = 'bold 14px monospace';
+                ctx.fillText('⚡', x + 42, y + 38);
+                break;
+
+            case 'snowPatch':
+                // Snow surface
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                ctx.fillRect(x, y, 50, 6);
+                // Shine
+                ctx.fillStyle = 'rgba(200, 230, 255, 0.5)';
+                ctx.fillRect(x + 5, y + 1, 15, 2);
+                break;
         }
     },
 
@@ -651,6 +878,112 @@ const Obstacles = {
                 ctx.fillStyle = '#FF6F00';
                 ctx.font = '6px monospace';
                 ctx.fillText('REPAIR', x + 1, y + 22 + bob);
+                break;
+
+            case 'hotChai':
+                // Cup
+                ctx.fillStyle = '#D32F2F';
+                ctx.fillRect(x + 2, y + 4 + bob, 12, 10);
+                // Cup rim
+                ctx.fillStyle = '#E57373';
+                ctx.fillRect(x + 1, y + 4 + bob, 14, 2);
+                // Handle
+                ctx.fillStyle = '#B71C1C';
+                ctx.fillRect(x + 13, y + 6 + bob, 3, 5);
+                // Chai inside
+                ctx.fillStyle = '#8D6E63';
+                ctx.fillRect(x + 3, y + 6 + bob, 10, 6);
+                // Steam wisps (more steam for hot chai)
+                const th = Date.now() * 0.004;
+                ctx.fillStyle = 'rgba(255,255,255,0.7)';
+                ctx.fillRect(x + 3, y - 4 + Math.sin(th) * 3 + bob, 3, 6);
+                ctx.fillRect(x + 7, y - 6 + Math.sin(th + 1) * 3 + bob, 3, 6);
+                ctx.fillRect(x + 10, y - 3 + Math.sin(th + 2) * 2 + bob, 2, 4);
+                break;
+
+            case 'bhutta':
+                // Corn cob
+                ctx.fillStyle = '#FDD835';
+                ctx.fillRect(x + 2, y + 2 + bob, 12, 12);
+                // Kernels
+                ctx.fillStyle = '#F9A825';
+                for (let i = 0; i < 3; i++) {
+                    for (let j = 0; j < 3; j++) {
+                        ctx.fillRect(x + 3 + i * 4, y + 3 + j * 4 + bob, 3, 3);
+                    }
+                }
+                // Husk
+                ctx.fillStyle = '#81C784';
+                ctx.fillRect(x, y + 12 + bob, 4, 4);
+                ctx.fillRect(x + 10, y + 12 + bob, 4, 4);
+                // Char marks
+                ctx.fillStyle = '#795548';
+                ctx.fillRect(x + 4, y + 5 + bob, 2, 2);
+                ctx.fillRect(x + 8, y + 8 + bob, 2, 2);
+                break;
+
+            case 'shawl':
+                // Woolen shawl
+                ctx.fillStyle = '#9C27B0';
+                ctx.fillRect(x, y + 2 + bob, 16, 12);
+                // Pattern
+                ctx.fillStyle = '#CE93D8';
+                ctx.fillRect(x + 2, y + 4 + bob, 12, 2);
+                ctx.fillRect(x + 2, y + 8 + bob, 12, 2);
+                // Fringe
+                ctx.fillStyle = '#7B1FA2';
+                for (let i = 0; i < 4; i++) {
+                    ctx.fillRect(x + i * 4, y + 14 + bob, 2, 4);
+                }
+                break;
+
+            case 'guava':
+                // Guava fruit
+                ctx.fillStyle = '#8BC34A';
+                ctx.beginPath();
+                ctx.arc(x + 7, y + 7 + bob, 6, 0, Math.PI * 2);
+                ctx.fill();
+                // Highlight
+                ctx.fillStyle = '#AED581';
+                ctx.fillRect(x + 4, y + 4 + bob, 3, 3);
+                // Stem
+                ctx.fillStyle = '#558B2F';
+                ctx.fillRect(x + 6, y + bob, 2, 3);
+                break;
+
+            case 'jeepToken':
+                // Jeep icon
+                ctx.fillStyle = '#FF9800';
+                ctx.fillRect(x + 2, y + 4 + bob, 16, 10);
+                // Windows
+                ctx.fillStyle = '#81D4FA';
+                ctx.fillRect(x + 4, y + 6 + bob, 6, 6);
+                ctx.fillRect(x + 12, y + 6 + bob, 6, 6);
+                // Wheels
+                ctx.fillStyle = '#1A1A1A';
+                ctx.beginPath();
+                ctx.arc(x + 5, y + 16 + bob, 3, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(x + 15, y + 16 + bob, 3, 0, Math.PI * 2);
+                ctx.fill();
+                // Star
+                ctx.fillStyle = '#FFD700';
+                ctx.fillRect(x + 7, y + bob, 2, 2);
+                break;
+
+            case 'delivery':
+                // Delivery box
+                ctx.fillStyle = '#8D6E63';
+                ctx.fillRect(x, y + 2 + bob, 16, 12);
+                // Tape
+                ctx.fillStyle = '#D7CCC8';
+                ctx.fillRect(x + 6, y + 2 + bob, 4, 12);
+                // Label
+                ctx.fillStyle = '#FFD700';
+                ctx.fillRect(x + 2, y + 5 + bob, 12, 4);
+                ctx.fillStyle = '#333';
+                ctx.fillRect(x + 4, y + 6 + bob, 8, 1);
                 break;
         }
     },

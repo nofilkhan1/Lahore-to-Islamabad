@@ -7,6 +7,7 @@ const Modes = {
     chalaan: { active: false, wardenX: -60, wardenY: 370, timer: 45, stunned: false, stunTimer: 0, caught: false },
     bonus: { active: false, timer: 15, cashRainTimer: 0, collected: 0 },
     toll: { active: false, choiceMade: false },
+    monsoonFlood: { active: false, timer: 0, waterLevel: 0 },
     garage: {
         active: false,
         upgrades: [
@@ -14,6 +15,8 @@ const Modes = {
             { id: 'shield', name: 'Bike Shield', desc: 'Survive 1 extra crash', cost: 600, max: 2, owned: 0, effect: '+1 crash' },
             { id: 'speed', name: 'Speed Boost', desc: '+10% top speed', cost: 500, max: 3, owned: 0, effect: '+10% speed' },
             { id: 'mtag', name: 'M-Tag Pass', desc: 'Skip toll plaza fees', cost: 800, max: 1, owned: 0, effect: 'Free toll' },
+            { id: 'jacket', name: 'Garam Jacket', desc: '+1 heart in cold levels', cost: 800, max: 1, owned: 0, effect: '+1 heart' },
+            { id: 'headlight', name: 'Better Headlight', desc: 'Wider vision in load shedding', cost: 500, max: 1, owned: 0, effect: 'Wider light' },
         ],
         selectedIndex: 0,
     },
@@ -33,6 +36,9 @@ const Modes = {
         this.bonus.collected = 0;
         this.toll.active = false;
         this.toll.choiceMade = false;
+        this.monsoonFlood.active = false;
+        this.monsoonFlood.timer = 0;
+        this.monsoonFlood.waterLevel = 0;
     },
 
     update(dt) {
@@ -40,6 +46,7 @@ const Modes = {
         if (this.bonus.active) this.updateBonusStage(dt);
         if (this.loadShedding.active) this.loadShedding.torchAngle += dt * 0.1;
         if (this.toll.active && !this.toll.choiceMade) this.updateToll(dt);
+        if (this.monsoonFlood.active) this.updateMonsoonFlood(dt);
     },
 
     // === LOAD SHEDDING ===
@@ -112,6 +119,40 @@ const Modes = {
         ctx.fillRect(x + 10, y - 4, 4, 4);
         ctx.fillStyle = flash ? '#2196F3' : '#FF0000';
         ctx.fillRect(x + 30, y - 4, 4, 4);
+    },
+
+    // === MONSOON FLOOD ===
+    activateMonsoonFlood() {
+        this.monsoonFlood.active = true;
+        this.monsoonFlood.timer = 0;
+        this.monsoonFlood.waterLevel = 0;
+    },
+
+    updateMonsoonFlood(dt) {
+        this.monsoonFlood.timer += dt / 60;
+        // Water rises every 3 seconds
+        if (this.monsoonFlood.timer > 3) {
+            this.monsoonFlood.waterLevel = Math.min(100, this.monsoonFlood.waterLevel + 10);
+            this.monsoonFlood.timer = 0;
+        }
+        // Slow player based on water level
+        const speedPenalty = this.monsoonFlood.waterLevel / 100;
+        Game.targetScrollSpeed = Levels.currentLevelData.scrollSpeed * (1 - speedPenalty * 0.5);
+    },
+
+    renderMonsoonFlood(ctx) {
+        if (!this.monsoonFlood.active) return;
+        // Water overlay
+        const waterHeight = this.monsoonFlood.waterLevel * 2;
+        ctx.fillStyle = 'rgba(33, 150, 243, 0.3)';
+        ctx.fillRect(0, 450 - waterHeight, 800, waterHeight);
+        // Rain
+        ctx.fillStyle = 'rgba(100, 181, 246, 0.5)';
+        for (let i = 0; i < 20; i++) {
+            const rx = (Date.now() * 0.1 + i * 40) % 800;
+            const ry = (Date.now() * 0.3 + i * 23) % 450;
+            ctx.fillRect(rx, ry, 2, 8);
+        }
     },
 
     // === BONUS STAGE ===
@@ -197,6 +238,7 @@ const Modes = {
     updateToll(dt) {
         if (!this.toll.active || this.toll.choiceMade) return;
         if (Input.isJumpJustPressed() || Input.isUp()) {
+            const tollCost = Player.mtagPass ? 0 : (this.toll.reduced ? 500 : 1000);
             if (Player.mtagPass) {
                 HUD.showMessage('M-TAG: FREE PASS!', '#00FF00');
                 Audio.play('collectCash');
@@ -205,9 +247,9 @@ const Modes = {
                 Game.targetScrollSpeed = Levels.currentLevelData ? Levels.currentLevelData.scrollSpeed : 100;
                 Game.scrollSpeed = Game.targetScrollSpeed;
                 Obstacles.getActive().forEach(o => { if (o.type === 'tollBarrier') o.active = false; });
-            } else if (Player.wallet >= 1000) {
-                Player.wallet -= 1000;
-                HUD.showMessage('-Rs. 1000 TOLL PAID', '#FFD700');
+            } else if (Player.wallet >= tollCost) {
+                Player.wallet -= tollCost;
+                HUD.showMessage('-Rs. ' + tollCost + ' TOLL PAID', '#FFD700');
                 Audio.play('collectCash');
                 this.toll.active = false;
                 this.toll.choiceMade = true;
@@ -215,7 +257,7 @@ const Modes = {
                 Game.scrollSpeed = Game.targetScrollSpeed;
                 Obstacles.getActive().forEach(o => { if (o.type === 'tollBarrier') o.active = false; });
             } else {
-                HUD.showMessage('NEED Rs. 1000!', '#ff4444');
+                HUD.showMessage('NEED Rs. ' + tollCost + '!', '#ff4444');
             }
         }
         if (Player.y < Player.groundY - 20 && Player.velX > 150) {
@@ -238,7 +280,8 @@ const Modes = {
         ctx.fillText('TOLL PLAZA', 400, 185);
         ctx.fillStyle = '#fff';
         ctx.font = '12px monospace';
-        ctx.fillText('Press JUMP to pay Rs. 1,000', 400, 215);
+        const tollCost = Player.mtagPass ? 0 : (this.toll.reduced ? 500 : 1000);
+        ctx.fillText('Press JUMP to pay Rs. ' + tollCost, 400, 215);
         ctx.fillText('OR jump over the barrier at full speed!', 400, 235);
         ctx.fillStyle = '#aaa';
         ctx.font = '10px monospace';
@@ -252,7 +295,8 @@ const Modes = {
             ctx.fillRect(0, 0, W, H);
             const px = Player.x + Player.w / 2;
             const py = Player.y + Player.h / 2;
-            const gradient = ctx.createRadialGradient(px, py, 0, px, py, Player.mode === 'bike' ? 180 : 120);
+            const lightRadius = Player.upgrades && Player.upgrades.headlight ? 220 : 180;
+            const gradient = ctx.createRadialGradient(px, py, 0, px, py, Player.mode === 'bike' ? lightRadius : 120);
             gradient.addColorStop(0, 'rgba(255, 255, 200, 0.4)');
             gradient.addColorStop(0.3, 'rgba(255, 255, 150, 0.2)');
             gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
@@ -276,6 +320,7 @@ const Modes = {
         if (this.chalaan.active) this.renderChalaanWarden(ctx);
         if (this.toll.active) this.renderTollOverlay(ctx);
         if (this.bonus.active) this.renderBonusStage(ctx);
+        if (this.monsoonFlood.active) this.renderMonsoonFlood(ctx);
     },
 
     // === TRUCK ART GARAGE ===
@@ -330,6 +375,8 @@ const Modes = {
         if (u.id === 'speed') Player.speedMultiplier = 1 + u.owned * 0.1;
         if (u.id === 'shield') Player.shieldCount = u.owned;
         if (u.id === 'mtag') Player.mtagPass = u.owned > 0;
+        if (u.id === 'jacket') Player.maxHearts = 3 + u.owned;
+        if (u.id === 'headlight') {} // Applied via upgrades check in load shedding
         Audio.play('collectCash');
         this.renderGarageUI();
     },

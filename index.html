@@ -595,13 +595,12 @@
 
         <!-- START SCREEN -->
         <div class="screen-overlay active" id="startScreen">
-            <div class="route-text">Lahore → GT Road → Islamabad</div>
+            <div class="route-text">Lahore → GT Road → Islamabad → Murree → Naran</div>
             <div class="screen-title">LAHORE TO ISLAMABAD</div>
             <div class="screen-subtitle">The Desi Road Trip</div>
             <div class="story-text">
-                "Beghairat Government ne metro ka budget kha liya hai.
-                Ab sirf ek purani Honda CD 70 hai aur GT Road ka safar.
-                Lahore se Islamabad — 400 km of pure Pakistani chaos."
+                Ali, 16, Lahore se nikla hai — pehle Islamabad pahunchna hai,<br>
+                phir Murree, phir Naran. Mama ki duaon ke saath, 500 rupay jeb mein.
             </div>
             <div class="controls-box">
                 <div class="controls-title">How to Play</div>
@@ -615,7 +614,7 @@
                 </div>
             </div>
             <div class="highscore-text" id="highscoreDisplay">Best Score: --</div>
-            <button class="screen-btn" id="btnStart">▶ START GAME</button>
+            <button class="screen-btn" id="btnStart">▶ START JOURNEY</button>
             <button class="screen-btn secondary" id="btnMuteStart">Sound: ON</button>
         </div>
 
@@ -653,15 +652,59 @@
 
         <!-- VICTORY SCREEN -->
         <div class="screen-overlay" id="victoryScreen">
-            <div class="screen-title">VICTORY!</div>
-            <div class="subtitle">Tum Pahunch Gaye The Monal!</div>
+            <div class="screen-title">SAIF-UL-MALOOK!</div>
+            <div class="subtitle" id="victorySubtitle">Tum Naran Pahunch Gaye!</div>
             <div class="stats" id="victoryStats">
                 Distance: 0 m<br>
                 Wallet: Rs. 0<br>
                 Score: 0
             </div>
+            <div style="color:#81D4FA; font-size:12px; margin:8px 0; text-align:center;">
+                "Saif-ul-Malook ki jheel, jahan pariyan naachti hain..."
+            </div>
             <button class="screen-btn" id="btnVictoryRetry">PLAY AGAIN</button>
             <button class="screen-btn secondary" id="btnVictoryMenu">Main Menu</button>
+        </div>
+
+        <!-- CHAPTER INTRO OVERLAY (rendered on canvas, but HTML fallback) -->
+        <div class="screen-overlay" id="chapterIntroScreen">
+            <div class="screen-title" id="chapterIntroTitle" style="color:#FFD700;"></div>
+            <div class="screen-subtitle" id="chapterIntroText"></div>
+        </div>
+
+        <!-- DIALOGUE BOX OVERLAY -->
+        <div class="screen-overlay" id="dialogueBox">
+            <div style="background:rgba(0,0,0,0.9); border:2px solid #FFD700; border-radius:8px; padding:16px 20px; max-width:500px; width:90%; text-align:center;">
+                <div style="color:#FFD700; font-size:12px; margin-bottom:8px;" id="dialogueSpeaker">Mama</div>
+                <div style="color:#fff; font-size:14px; line-height:1.6;" id="dialogueText"></div>
+                <div style="color:#888; font-size:10px; margin-top:12px;">Tap anywhere to continue</div>
+            </div>
+        </div>
+
+        <!-- MAMA SCENE OVERLAY -->
+        <div class="screen-overlay" id="mamaSceneScreen">
+            <div style="text-align:center;">
+                <div style="font-size:80px; margin-bottom:16px;" id="mamaEmoji">🕌</div>
+                <div style="color:#FFD700; font-size:20px; margin-bottom:8px;" id="mamaSceneTitle"></div>
+                <div style="color:#E8B89D; font-size:14px; max-width:400px; line-height:1.6;" id="mamaSceneText"></div>
+            </div>
+        </div>
+
+        <!-- GAME ENDING OVERLAY (Saif-ul-Malook lake) -->
+        <div class="screen-overlay" id="gameEndingScreen">
+            <div style="text-align:center;">
+                <div style="font-size:48px; margin-bottom:12px;">🏔️</div>
+                <div style="color:#1565C0; font-size:24px; margin-bottom:4px;">Saif-ul-Malook</div>
+                <div style="color:#FFD700; font-size:18px; margin-bottom:12px;">Ali ne Safar Mukammal Kiya</div>
+                <div style="color:#E8B89D; font-size:13px; max-width:400px; line-height:1.6; margin-bottom:16px;">
+                    "Jab Lahore ki galiyan yaad aayen, jab GT Road ki dhool yaad aaye,<br>
+                    jab Islamabad ki sakoon yaad aaye — toh jheel ki taraf dekho.<br>
+                    Main yahan hoon. Hum sab yahan hain."
+                </div>
+                <div style="color:#4CAF50; font-size:14px; margin-bottom:16px;">The Desi Road Trip — Complete</div>
+                <button class="screen-btn" id="btnEndingRetry">PLAY AGAIN</button>
+                <button class="screen-btn secondary" id="btnEndingMenu">Main Menu</button>
+            </div>
         </div>
 
         <!-- TRUCK ART GARAGE SCREEN -->
@@ -698,6 +741,8 @@
     <script src="hud.js"></script>
     <script src="audio.js"></script>
     <script src="particles.js"></script>
+    <script src="story.js"></script>
+    <script src="economy.js"></script>
     <script src="modes.js"></script>
     <script src="game.js"></script>
 </body>

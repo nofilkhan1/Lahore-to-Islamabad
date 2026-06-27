@@ -131,16 +131,27 @@ const Player = {
             this.y = this.groundY;
         }
 
-        // Manual dismount (risky - costs 1 heart + 2s stun)
-        if (this.mode === 'bike' && Input.isDismount() && !this.mountingBike) {
-            this.hearts = Math.max(0, this.hearts - 1);
-            this.demoteToFoot();
-            this.invincible = true;
-            this.invincibleTimer = 2.0;
-            HUD.showMessage('DISMOUNT! -1 Heart', '#ff4444');
-            Audio.play('hit');
-            Utils.triggerScreenShake(3, 0.2);
+    // Manual dismount (risky - costs 1 heart + 2s stun)
+    // Forced dismount at toll (Ch2.1) - press E within 800-600px of toll
+    if (this.mode === 'bike' && Input.isDismount() && !this.mountingBike) {
+        const levelData = Levels.currentLevelData;
+        if (levelData && levelData.forcedDismountAt) {
+            const tollObs = Obstacles.getActive().find(o => o.type === 'tollBarrier');
+            if (tollObs && Math.abs(this.x - tollObs.x) < levelData.forcedDismountAt) {
+                this.demoteToFoot();
+                HUD.showMessage('Dismounted for toll!', '#4CAF50');
+                Audio.play('bikeCrash');
+                return;
+            }
         }
+        this.hearts = Math.max(0, this.hearts - 1);
+        this.demoteToFoot();
+        this.invincible = true;
+        this.invincibleTimer = 2.0;
+        HUD.showMessage('DISMOUNT! -1 Heart', '#ff4444');
+        Audio.play('hit');
+        Utils.triggerScreenShake(3, 0.2);
+    }
 
         // Coyote time - grace period after leaving ground
         if (this.grounded) {
