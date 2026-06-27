@@ -39,7 +39,7 @@ const Player = {
     reset() {
         this.mode = 'foot';
         this.x = 100;
-        this.groundY = 450 - this.foot.h - 16;
+        this.groundY = 395 - this.foot.h;
         this.y = this.groundY;
         this.velX = 0; this.velY = 0;
         this.grounded = true;
@@ -73,10 +73,10 @@ const Player = {
         this.mountingBike = false;
         if (this.mode === 'foot') {
             this.w = this.foot.w; this.h = this.foot.h;
-            this.groundY = 450 - this.foot.h - 16;
+            this.groundY = 395 - this.foot.h;
         } else {
             this.w = this.bike.w; this.h = this.bike.h;
-            this.groundY = 450 - this.bike.h - 16;
+            this.groundY = 395 - this.bike.h;
         }
         this.y = this.groundY;
     },
@@ -88,7 +88,7 @@ const Player = {
                 this.mountingBike = false;
                 this.mode = 'bike';
                 this.w = this.bike.w; this.h = this.bike.h;
-                this.groundY = 450 - this.bike.h - 16;
+                this.groundY = 395 - this.bike.h;
                 this.y = this.groundY;
                 // Increase scroll speed for bike mode (1.8x)
                 Game.targetScrollSpeed = (Levels.currentLevelData ? Levels.currentLevelData.scrollSpeed : 100) * 1.8;
@@ -252,7 +252,7 @@ const Player = {
         if (this.mode === 'foot') return;
         this.mode = 'foot';
         this.w = this.foot.w; this.h = this.foot.h;
-        this.groundY = 450 - this.foot.h - 16;
+        this.groundY = 395 - this.foot.h;
         this.y = this.groundY;
         this.invincible = true; this.invincibleTimer = 1.5;
         this.flashTimer = 1.5; this.flashInterval = 0;
@@ -308,10 +308,13 @@ const Player = {
         }
 
         // Shadow
-        ctx.fillStyle = 'rgba(0,0,0,0.2)';
+        ctx.save();
+        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = '#000';
         ctx.beginPath();
-        ctx.ellipse(x + 16, this.groundY + this.h + 2, 14, 3, 0, 0, Math.PI * 2);
+        ctx.ellipse(this.x + this.w/2, 395, this.w * 0.7, 4, 0, 0, Math.PI * 2);
         ctx.fill();
+        ctx.restore();
 
         if (this.ducking) {
             // Ducking pose - compact crouch
@@ -417,10 +420,13 @@ const Player = {
         }
 
         // Shadow
-        ctx.fillStyle = 'rgba(0,0,0,0.25)';
+        ctx.save();
+        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = '#000';
         ctx.beginPath();
-        ctx.ellipse(x + 32, this.groundY + this.h + 3, 28, 4, 0, 0, Math.PI * 2);
+        ctx.ellipse(this.x + 32, 395, 22, 4, 0, 0, Math.PI * 2);
         ctx.fill();
+        ctx.restore();
 
         // === BIKE (Honda CD 70 style) ===
 

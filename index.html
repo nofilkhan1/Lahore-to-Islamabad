@@ -6,6 +6,12 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <title>Lahore to Islamabad — The Desi Road Trip</title>
+    <!-- Urdu font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
+    <!-- PWA manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#FF6F00">
     <style>
         * {
             margin: 0;
@@ -121,31 +127,7 @@
             transition: width 0.1s, background 0.3s;
         }
 
-        /* Wallet — top right */
-        #walletContainer {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            background: rgba(0, 0, 0, 0.6);
-            padding: 4px 10px;
-            border-radius: 4px;
-            border: 1px solid #c8a415;
-        }
 
-        #walletIcon {
-            color: #FFD700;
-            font-size: 14px;
-            font-weight: bold;
-        }
-
-        #walletAmount {
-            color: #FFD700;
-            font-size: 14px;
-            font-weight: bold;
-            text-shadow: 1px 1px 2px #000;
-            min-width: 50px;
-            text-align: right;
-        }
 
         /* Distance tracker — below top bar */
         #distanceContainer {
@@ -535,6 +517,94 @@
                 height: 65px;
             }
         }
+        .game-title-urdu {
+            font-family: 'Noto Nastaliq Urdu', serif;
+            font-size: 28px;
+            color: #FFD700;
+            text-align: center;
+            margin-bottom: 4px;
+            text-shadow: 0 0 20px rgba(255,215,0,0.5);
+        }
+        .game-title {
+            font-family: monospace;
+            font-size: 32px;
+            font-weight: bold;
+            color: #fff;
+            text-align: center;
+            letter-spacing: 3px;
+            text-shadow: 3px 3px 0 #FF6F00, 6px 6px 0 rgba(0,0,0,0.3);
+        }
+        .game-subtitle {
+            font-size: 13px;
+            color: #FFB300;
+            text-align: center;
+            margin: 8px 0 20px;
+            font-family: monospace;
+        }
+        .story-quote {
+            background: rgba(0,0,0,0.5);
+            border-left: 3px solid #FFD700;
+            padding: 12px 16px;
+            margin: 0 auto 24px;
+            max-width: 380px;
+            font-family: monospace;
+            font-size: 13px;
+            color: #eee;
+            font-style: italic;
+        }
+        .quote-en {
+            color: #aaa;
+            font-size: 11px;
+        }
+        .btn-main {
+            display: block;
+            margin: 0 auto 12px;
+            padding: 14px 48px;
+            background: linear-gradient(135deg, #FF6F00, #FF8F00);
+            color: #fff;
+            font-family: monospace;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            letter-spacing: 2px;
+            box-shadow: 0 4px 0 #BF360C, 0 6px 12px rgba(0,0,0,0.4);
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .btn-main:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0 #BF360C, 0 8px 16px rgba(0,0,0,0.4);
+        }
+        .btn-main:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #BF360C;
+        }
+        .btn-secondary {
+            display: block;
+            margin: 0 auto 12px;
+            padding: 10px 32px;
+            background: transparent;
+            color: #ccc;
+            font-family: monospace;
+            font-size: 13px;
+            border: 2px solid #555;
+            cursor: pointer;
+            border-radius: 6px;
+        }
+        .btn-secondary:hover {
+            border-color: #aaa;
+            color: #fff;
+        }
+        .controls-hint {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 11px;
+            color: #888;
+        }
     </style>
 </head>
 <body>
@@ -562,11 +632,7 @@
                     </div>
                 </div>
 
-                <!-- Wallet — top right -->
-                <div id="walletContainer">
-                    <span id="walletIcon">Rs.</span>
-                    <span id="walletAmount">0</span>
-                </div>
+
             </div>
 
             <!-- Distance tracker -->
@@ -595,27 +661,25 @@
 
         <!-- START SCREEN -->
         <div class="screen-overlay active" id="startScreen">
-            <div class="route-text">Lahore → GT Road → Islamabad → Murree → Naran</div>
-            <div class="screen-title">LAHORE TO ISLAMABAD</div>
-            <div class="screen-subtitle">The Desi Road Trip</div>
-            <div class="story-text">
-                Ali, 16, Lahore se nikla hai — pehle Islamabad pahunchna hai,<br>
-                phir Murree, phir Naran. Mama ki duaon ke saath, 500 rupay jeb mein.
-            </div>
-            <div class="controls-box">
-                <div class="controls-title">How to Play</div>
-                <div class="controls-grid">
-                    <div><span>← →</span> Move / Accelerate</div>
-                    <div><span>↑ / SPACE</span> Jump</div>
-                    <div><span>↓</span> Duck</div>
-                    <div><span>E</span> Dismount Bike</div>
-                    <div><span>P / ESC</span> Pause</div>
-                    <div><span>M</span> Mute</div>
+            <div class="start-inner">
+                <div class="game-title-urdu">لاہور سے اسلام آباد</div>
+                <div class="game-title">LAHORE TO ISLAMABAD</div>
+                <div class="game-subtitle">ایک لڑکے کا سفر · A Boy's Journey</div>
+                <div class="story-quote">
+                    "Har safar ghar se shuru hota hai."<br>
+                    <span class="quote-en">Every journey begins at home.</span>
+                </div>
+                <div class="highscore-text" id="highscoreDisplay"></div>
+                <button class="btn-main" id="btnStart">▶ SAFAR SHURU KARO</button>
+                <button class="btn-secondary" id="btnMuteStart">Sound: ON</button>
+                <div class="controls-hint">
+                    <span>↑ / SPACE — Jump</span>
+                    <span>↓ — Duck</span>
+                    <span>← → — Move</span>
+                    <span>E — Dismount</span>
+                    <span>P — Pause</span>
                 </div>
             </div>
-            <div class="highscore-text" id="highscoreDisplay">Best Score: --</div>
-            <button class="screen-btn" id="btnStart">▶ START JOURNEY</button>
-            <button class="screen-btn secondary" id="btnMuteStart">Sound: ON</button>
         </div>
 
         <!-- PAUSE SCREEN -->

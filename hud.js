@@ -59,7 +59,7 @@ const HUD = {
                 heartContainer.appendChild(heart);
             }
         }
-        document.getElementById('walletAmount').textContent = Utils.formatRupees(Player.wallet);
+
         const fuelContainer = document.getElementById('fuelContainer');
         const fuelBarFill = document.getElementById('fuelBarFill');
         if (Player.mode === 'bike') {
@@ -171,13 +171,16 @@ const HUD = {
         ctx.fillStyle = remaining < 500 ? '#4CAF50' : '#ccc';
         ctx.fillText(remaining + 'm left', barX + barW, barY + barH + 10);
 
-        // Wallet on right side
+        // Canvas-rendered wallet (top-right)
+        ctx.save();
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.fillRect(690, 4, 100, 18);
         ctx.textAlign = 'right';
-        ctx.fillStyle = '#FFD700';
-        ctx.font = 'bold 10px monospace';
-        const walletColor = Player.wallet > 0 ? '#FFD700' : '#ff4444';
-        ctx.fillStyle = walletColor;
-        ctx.fillText('Rs.' + Utils.formatRupees(Player.wallet), 780, 46);
+        ctx.fillStyle = Player.wallet > 0 ? '#FFD700' : '#ff4444';
+        ctx.font = 'bold 12px monospace';
+        ctx.fillText('Rs. ' + Utils.formatRupees(Player.wallet), 786, 16);
+        ctx.textAlign = 'left';
+        ctx.restore();
 
         // Chapter name
         const chapterData = Game.chapterData[Game.currentChapter];

@@ -251,11 +251,321 @@ const Story = {
         },
     ],
 
+    // === HOME SCENE (pre-game cutscene) ===
+    homeSceneCallback: null,
+    homeSceneState: 'idle',
+    homeSceneTimer: 0,
+    homeScenePhase: 0,
+    homeSceneDialogueIndex: 0,
+    homeSceneTyping: false,
+    homeSceneText: '',
+    homeSceneFullText: '',
+    homeSceneSpeaker: '',
+    mamaX: 800,
+    aliState: 'sleeping', // sleeping, sitting, standing, walking
+    fadeAlpha: 0,
+    fadeDirection: 0,
+
+    homeSceneLines: [
+        { speaker: 'Mama', text: 'ALI! Uth ja. Subah ho gayi!', type: 'mama' },
+        { speaker: 'Ali', text: '...5 minute aur Ammi...', type: 'ali' },
+        { speaker: 'Mama', text: 'DOODH LENA HAI. Uth ja ABHI. Rs. 500 rakh liye hain counter pe.', type: 'mama' },
+        { speaker: 'Ali', text: 'Theek hai theek hai...', type: 'ali' },
+        { speaker: 'Mama', text: 'Aur seedha aana. Islamabad waisabad. Ghar mein reh.', type: 'mama' },
+        { speaker: 'Ali', text: '...Ammi, Islamabad mein log khush hote hain.', type: 'ali' },
+        { speaker: 'Mama', text: 'Tujhe pata nahi kuch. JA. Doodh le.', type: 'mama' },
+    ],
+
+    startHomeScene(callback) {
+        this.homeSceneCallback = callback;
+        this.homeSceneState = 'animating';
+        this.homeSceneTimer = 0;
+        this.homeScenePhase = 0; // 0=mama walks in, 1=dialogue, 2=ali walks out, 3=fade+text
+        this.homeSceneDialogueIndex = 0;
+        this.homeSceneTyping = false;
+        this.homeSceneText = '';
+        this.homeSceneFullText = '';
+        this.homeSceneSpeaker = '';
+        this.mamaX = 800;
+        this.aliState = 'sleeping';
+        this.fadeAlpha = 0;
+        this.fadeDirection = 0;
+    },
+
+    updateHomeScene(dt) {
+        if (this.homeSceneState !== 'animating') return;
+        const dtSec = dt / 60;
+        this.homeSceneTimer += dtSec;
+
+        if (this.homeScenePhase === 0) {
+            // Mama walks in from right
+            this.mamaX = Math.max(560, 800 - (this.homeSceneTimer / 2) * 240);
+            if (this.homeSceneTimer >= 2) {
+                this.homeScenePhase = 1;
+                this.homeSceneTimer = 0;
+                this.startHomeDialogue();
+            }
+        } else if (this.homeScenePhase === 1) {
+            // Typing dialogue
+            if (this.homeSceneTyping) {
+                this.dialogueTimer += dtSec;
+                if (this.dialogueTimer >= this.dialogueCharDelay) {
+                    this.dialogueTimer = 0;
+                    if (this.homeSceneText.length < this.homeSceneFullText.length) {
+                        this.homeSceneText += this.homeSceneFullText[this.homeSceneText.length];
+                    } else {
+                        this.homeSceneTyping = false;
+                    }
+                }
+            }
+        } else if (this.homeScenePhase === 2) {
+            // Ali walks to right
+            if (this.homeSceneTimer > 2) {
+                this.homeScenePhase = 3;
+                this.homeSceneTimer = 0;
+                this.fadeDirection = 1;
+            }
+        } else if (this.homeScenePhase === 3) {
+            // Fade to black
+            this.fadeAlpha = Math.min(1, this.fadeAlpha + dtSec * 1.5);
+            if (this.fadeAlpha >= 1 && this.homeSceneTimer > 3.5) {
+                this.homeSceneState = 'done';
+                if (this.homeSceneCallback) this.homeSceneCallback();
+            }
+        }
+    },
+
+    startHomeDialogue() {
+        const line = this.homeSceneLines[this.homeSceneDialogueIndex];
+        if (!line) {
+            // All dialogue done — Ali walks out
+            this.homeScenePhase = 2;
+            this.homeSceneTimer = 0;
+            this.aliState = 'walking';
+            return;
+        }
+        this.homeSceneSpeaker = line.speaker;
+        this.homeSceneFullText = line.text;
+        this.homeSceneText = '';
+        this.homeSceneTyping = true;
+        this.dialogueTimer = 0;
+    },
+
+    advanceHomeDialogue() {
+        if (this.homeScenePhase !== 1) return;
+        if (this.homeSceneTyping) {
+            this.homeSceneText = this.homeSceneFullText;
+            this.homeSceneTyping = false;
+            return;
+        }
+        // Update ali state based on dialogue
+        if (this.homeSceneDialogueIndex === 2) this.aliState = 'sitting';
+        if (this.homeSceneDialogueIndex === 4) this.aliState = 'standing';
+        this.homeSceneDialogueIndex++;
+        if (this.homeSceneDialogueIndex >= this.homeSceneLines.length) {
+            this.homeScenePhase = 2;
+            this.homeSceneTimer = 0;
+            this.aliState = 'walking';
+        } else {
+            this.startHomeDialogue();
+        }
+    },
+
+    renderHomeScene(ctx) {
+        const W = 800, H = 450;
+
+        // Room interior background
+        ctx.fillStyle = '#1A0A00';
+        ctx.fillRect(0, 0, W, H);
+
+        // Warm ambient glow from bulb area
+        const glow = ctx.createRadialGradient(400, 60, 10, 400, 60, 200);
+        glow.addColorStop(0, 'rgba(255, 200, 100, 0.15)');
+        glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = glow;
+        ctx.fillRect(0, 0, W, H);
+
+        // Flickering bulb
+        const flickerAlpha = 0.6 + 0.4 * Math.sin(Date.now() * 0.005);
+        ctx.save();
+        ctx.globalAlpha = flickerAlpha;
+        ctx.fillStyle = '#FFD700';
+        ctx.beginPath();
+        ctx.arc(400, 50, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(255, 200, 100, 0.3)';
+        ctx.beginPath();
+        ctx.arc(400, 50, 25, 0, Math.PI * 2);
+        ctx.fill();
+        // Bulb wire
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(400, 0);
+        ctx.lineTo(400, 42);
+        ctx.stroke();
+        ctx.restore();
+
+        // Charpoy (wooden bed) on left
+        const bedBob = Math.sin(Date.now() * 0.002) * 2;
+        ctx.fillStyle = '#8B6914';
+        ctx.fillRect(80, 340, 200, 12); // Bed surface
+        ctx.fillStyle = '#6B4F12';
+        ctx.fillRect(80, 352, 8, 30); // Legs
+        ctx.fillRect(272, 352, 8, 30);
+        ctx.fillRect(140, 352, 8, 30);
+        ctx.fillRect(210, 352, 8, 30);
+        // Rope weaving pattern
+        ctx.fillStyle = '#A08030';
+        for (let i = 0; i < 10; i++) {
+            ctx.fillRect(85 + i * 20, 342, 12, 2);
+        }
+
+        // Ali on charpoy
+        if (this.aliState === 'sleeping') {
+            // Lying down — white/cream body
+            const aliY = 324 + bedBob;
+            ctx.fillStyle = '#F5F5DC';
+            ctx.fillRect(120, aliY, 80, 18); // Body
+            ctx.fillStyle = '#E8B89D';
+            ctx.fillRect(115, aliY, 12, 14); // Head
+            ctx.fillStyle = '#2C1810';
+            ctx.fillRect(113, aliY - 2, 16, 6); // Hair
+        } else if (this.aliState === 'sitting') {
+            ctx.fillStyle = '#F5F5DC';
+            ctx.fillRect(140, 310, 24, 30); // Body
+            ctx.fillStyle = '#E8B89D';
+            ctx.fillRect(143, 296, 18, 16); // Head
+            ctx.fillStyle = '#2C1810';
+            ctx.fillRect(141, 294, 22, 6); // Hair
+        } else if (this.aliState === 'standing') {
+            ctx.fillStyle = '#F5F5DC';
+            ctx.fillRect(150, 290, 24, 48); // Body
+            ctx.fillStyle = '#E8B89D';
+            ctx.fillRect(153, 276, 18, 16); // Head
+            ctx.fillStyle = '#2C1810';
+            ctx.fillRect(151, 274, 22, 6); // Hair
+        } else if (this.aliState === 'walking') {
+            const walkX = 150 + this.homeSceneTimer * 100;
+            ctx.fillStyle = '#F5F5DC';
+            ctx.fillRect(Math.min(walkX, 820), 290, 24, 48);
+            ctx.fillStyle = '#E8B89D';
+            ctx.fillRect(Math.min(walkX, 820) + 3, 276, 18, 16);
+            ctx.fillStyle = '#2C1810';
+            ctx.fillRect(Math.min(walkX, 820) + 1, 274, 22, 6);
+        }
+
+        // TV in corner showing Islamabad
+        const tvFlicker = Math.sin(Date.now() * 0.01) * 0.1 + 0.9;
+        ctx.save();
+        ctx.globalAlpha = tvFlicker;
+        ctx.fillStyle = '#333';
+        ctx.fillRect(650, 300, 80, 60);
+        ctx.fillStyle = '#4CAF50';
+        ctx.fillRect(654, 304, 72, 52);
+        ctx.fillStyle = '#fff';
+        ctx.font = '6px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('ISLAMABAD', 690, 326);
+        ctx.fillStyle = '#FFD700';
+        ctx.fillRect(660, 332, 60, 3); // Road
+        ctx.fillStyle = '#2196F3';
+        ctx.fillRect(690, 318, 12, 14); // Mosque dome
+        ctx.textAlign = 'left';
+        ctx.restore();
+
+        // Mama silhouette
+        if (this.homeScenePhase >= 0) {
+            const mx = this.mamaX;
+            const my = 260;
+            ctx.fillStyle = '#000000';
+            // Head
+            ctx.beginPath();
+            ctx.arc(mx, my, 18, 0, Math.PI * 2);
+            ctx.fill();
+            // Body
+            ctx.fillRect(mx - 18, my + 18, 36, 80);
+            // Dupatta
+            ctx.beginPath();
+            ctx.moveTo(mx - 22, my);
+            ctx.lineTo(mx - 30, my + 60);
+            ctx.lineTo(mx + 10, my + 20);
+            ctx.lineTo(mx + 22, my);
+            ctx.closePath();
+            ctx.fill();
+            // Hands on hips
+            ctx.beginPath();
+            ctx.arc(mx - 20, my + 40, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(mx + 20, my + 40, 5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Dialogue box during phase 1
+        if (this.homeScenePhase === 1) {
+            ctx.fillStyle = 'rgba(0,0,0,0.8)';
+            ctx.fillRect(0, 340, 800, 110);
+            // Border
+            ctx.strokeStyle = '#FFD700';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(2, 342, 796, 106);
+
+            // Speaker name
+            ctx.fillStyle = this.homeSceneSpeaker === 'Mama' ? '#FF6B6B' : '#87CEEB';
+            ctx.font = 'bold 13px monospace';
+            ctx.fillText(this.homeSceneSpeaker, 20, 362);
+
+            // Dialogue text with word wrap
+            ctx.fillStyle = '#fff';
+            ctx.font = '13px monospace';
+            const words = this.homeSceneText.split(' ');
+            let line = '';
+            let lineY = 380;
+            for (let i = 0; i < words.length; i++) {
+                const testLine = line + words[i] + ' ';
+                if (ctx.measureText(testLine).width > 740 && line !== '') {
+                    ctx.fillText(line, 20, lineY);
+                    line = words[i] + ' ';
+                    lineY += 18;
+                } else {
+                    line = testLine;
+                }
+            }
+            ctx.fillText(line, 20, lineY);
+
+            // Blinking cursor
+            if (!this.homeSceneTyping && Math.floor(Date.now() / 500) % 2 === 0) {
+                const cursorX = 20 + ctx.measureText(line).width;
+                ctx.fillText('\u258C', cursorX, lineY);
+            }
+
+            // Hint text
+            ctx.fillStyle = '#666';
+            ctx.font = '10px monospace';
+            ctx.fillText('Click or Space to continue', 600, 440);
+        }
+
+        // Fade overlay
+        if (this.fadeAlpha > 0) {
+            ctx.fillStyle = 'rgba(0,0,0,' + this.fadeAlpha + ')';
+            ctx.fillRect(0, 0, W, H);
+            if (this.fadeAlpha >= 1 && this.homeScenePhase === 3) {
+                ctx.fillStyle = '#fff';
+                ctx.font = '14px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText('Ali ne Rs. 500 uthaye. Aur socha — pehle doodh. Phir... Islamabad.', 400, 225);
+                ctx.textAlign = 'left';
+            }
+        }
+    },
+
     init() {
         this.currentScene = null;
         this.dialogueIndex = 0;
         this.smsQueue = [];
         this.activeSms = null;
+        this.homeSceneState = 'idle';
     },
 
     // Start a scene (prologue, chapter intro, etc.)

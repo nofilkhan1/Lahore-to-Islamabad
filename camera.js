@@ -1,30 +1,47 @@
 // ============================================================
 // camera.js — 4-layer parallax scrolling with real BG images
+// CHANGE 3: 3-layer textured ground system
+// CHANGE 4: Fix background rendering (seams, depth, scale)
+// CHANGE 7: Near-layer fast-scrolling decorations
 // ============================================================
 
 const Camera = {
     canvas: null,
     layers: [
         { offset: 0, speed: 0.05 },
-        { offset: 0, speed: 0.3 },
-        { offset: 0, speed: 0.6 },
+        { offset: 0, speed: 0.18 },
+        { offset: 0, speed: 0.5 },
         { offset: 0, speed: 1.0 },
     ],
-    cityThemes: {
-        Lahore: { sky: '#FF8C42', skyGrad: '#FFB366', far: '#C4956A', mid: '#8B6914', near: '#5C4033', ground: '#8B7355', pavement: '#A0A0A0' },
-        'GT Road': { sky: '#87CEEB', skyGrad: '#B0E0E6', far: '#4CAF50', mid: '#388E3C', near: '#555555', ground: '#D2B48C', pavement: '#777777' },
-        Islamabad: { sky: '#5B86E5', skyGrad: '#7BA4F0', far: '#2F4F4F', mid: '#2E8B57', near: '#708090', ground: '#6B8E23', pavement: '#A9A9A9', hills: '#2E4E3E', hillPeak: '#1A3A2A' },
-        Murree: { sky: '#1A237E', skyGrad: '#283593', far: '#1B5E20', mid: '#2E7D32', near: '#4E342E', ground: '#3E2723', pavement: '#5D4037', snow: '#fff', pine: '#1B5E20' },
-        Naran: { sky: '#0D47A1', skyGrad: '#1565C0', far: '#1A237E', mid: '#283593', near: '#3E2723', ground: '#4E342E', pavement: '#5D4037', river: '#1565C0', mountain: '#37474F' },
+
+    // City-specific background configuration using image source rects
+    bgConfig: {
+        Lahore: {
+            sky:      { key: 'bg_lahore_far',  srcY: 0,    srcH: 0.35, dstY: 0,   dstH: 160, alpha: 1.0,  speed: 0.05 },
+            farBuild: { key: 'bg_lahore_far',  srcY: 0.25, srcH: 0.55, dstY: 110, dstH: 230, alpha: 0.9,  speed: 0.18 },
+            nearBuild:{ key: 'bg_lahore_near', srcY: 0.3,  srcH: 0.6,  dstY: 250, dstH: 160, alpha: 1.0,  speed: 0.5  },
+        },
+        'GT Road': {
+            sky:      { key: 'bg_gtroad_far',  srcY: 0,    srcH: 0.4,  dstY: 0,   dstH: 170, alpha: 1.0,  speed: 0.05 },
+            farBuild: { key: 'bg_gtroad_far',  srcY: 0.3,  srcH: 0.5,  dstY: 130, dstH: 210, alpha: 0.85, speed: 0.2  },
+            nearBuild:{ key: 'bg_gtroad_mid',  srcY: 0.2,  srcH: 0.7,  dstY: 260, dstH: 150, alpha: 1.0,  speed: 0.5  },
+        },
+        Islamabad: {
+            sky:      { key: 'bg_isb_far',     srcY: 0,    srcH: 0.35, dstY: 0,   dstH: 155, alpha: 1.0,  speed: 0.05 },
+            farBuild: { key: 'bg_isb_far',     srcY: 0.2,  srcH: 0.6,  dstY: 100, dstH: 240, alpha: 0.85, speed: 0.18 },
+            nearBuild:{ key: 'bg_isb_mid',     srcY: 0.3,  srcH: 0.65, dstY: 255, dstH: 155, alpha: 1.0,  speed: 0.5  },
+        },
+        Murree:  { procedural: true },
+        Naran:   { procedural: true },
     },
 
-    // City → image key mapping for each parallax layer
-    cityImages: {
-        Lahore:   { far: 'bg_lahore_far',  mid: null,  near: 'bg_lahore_near' },
-        'GT Road': { far: 'bg_gtroad_far',  mid: 'bg_gtroad_mid', near: 'bg_gtroad_near' },
-        Islamabad: { far: 'bg_isb_far',     mid: 'bg_isb_mid',    near: 'bg_isb_near' },
-        Murree:   { far: null,              mid: null,  near: null },
-        Naran:    { far: null,              mid: null,  near: null },
+    // Fallback colors for sky gradients and ground when images are missing
+    cityThemes: {
+        Lahore:     { sky: '#FF8C42', skyGrad: '#FFB366', far: '#C4956A', mid: '#8B6914', near: '#5C4033', ground: '#8B7355', pavement: '#A0A0A0' },
+        'GT Road':  { sky: '#87CEEB', skyGrad: '#B0E0E6', far: '#4CAF50', mid: '#388E3C', near: '#555555', ground: '#D2B48C', pavement: '#777777' },
+        Islamabad:  { sky: '#5B86E5', skyGrad: '#7BA4F0', far: '#2F4F4F', mid: '#2E8B57', near: '#708090', ground: '#6B8E23', pavement: '#A9A9A9', hills: '#2E4E3E', hillPeak: '#1A3A2A' },
+        Murree:     { sky: '#1A237E', skyGrad: '#283593', far: '#1B5E20', mid: '#2E7D32', near: '#4E342E', ground: '#3E2723', pavement: '#5D4037', snow: '#fff', pine: '#1B5E20' },
+        Naran:      { sky: '#0D47A1', skyGrad: '#1565C0', far: '#1A237E', mid: '#283593', near: '#3E2723', ground: '#4E342E', pavement: '#5D4037', river: '#1565C0', mountain: '#37474F' },
     },
 
     init(canvas) { this.canvas = canvas; },
@@ -38,327 +55,68 @@ const Camera = {
         }
     },
 
-    // Helper: tile an image horizontally with parallax offset
-    drawTiledLayer(ctx, imgKey, layerOffset, y, h, alpha) {
+    // CHANGE 4: Seamless tiling with clipRect — stretches to 800px width
+    drawTiledLayer(ctx, imgKey, layerOffset, srcY, srcH, dstY, dstH, alpha) {
         const img = AssetLoader.get(imgKey);
         if (!img) return false;
-        const W = 800;
-        const imgW = img.width;
-        const imgH = img.height;
         ctx.save();
         ctx.globalAlpha = alpha || 1;
-        const offset = layerOffset % imgW;
-        for (let drawX = -offset - imgW; drawX < W + imgW; drawX += imgW) {
-            ctx.drawImage(img, drawX, y, imgW, h);
-        }
+        ctx.beginPath();
+        ctx.rect(0, dstY, 800, dstH);
+        ctx.clip();
+        const drawW = 800;
+        const offset = layerOffset % drawW;
+        ctx.drawImage(img, 0, srcY * img.height, img.width, srcH * img.height, -offset, dstY, drawW, dstH);
+        ctx.drawImage(img, 0, srcY * img.height, img.width, srcH * img.height, drawW - offset, dstY, drawW, dstH);
         ctx.restore();
         return true;
     },
 
+    // --------------------------------------------------------
+    // Main render — sky, bg layers (image or procedural), ground, near decorations
+    // --------------------------------------------------------
     render(ctx) {
         const city = Levels.currentLevelData ? Levels.currentLevelData.city : 'Lahore';
         const theme = this.cityThemes[city] || this.cityThemes.Lahore;
         const W = 800, H = 450;
+        const bg = this.bgConfig[city] || {};
 
-        // Sky gradient
-        const skyGrad = ctx.createLinearGradient(0, 0, 0, H * 0.5);
+        // Sky gradient fallback
+        const skyGrad = ctx.createLinearGradient(0, 0, 0, 160);
         skyGrad.addColorStop(0, theme.sky);
-        skyGrad.addColorStop(1, theme.skyGrad);
+        skyGrad.addColorStop(1, theme.skyGrad || theme.sky);
         ctx.fillStyle = skyGrad;
-        ctx.fillRect(0, 0, W, H * 0.5);
+        ctx.fillRect(0, 0, W, 160);
 
-        this.renderFarLayer(ctx, theme, W, H, city);
-        this.renderMidLayer(ctx, theme, W, H, city);
-        this.renderNearLayer(ctx, theme, W, H, city);
+        if (bg.procedural) {
+            // Murree / Naran — fully procedural backgrounds
+            const offsets = this.layers.map(l => l.offset);
+            if (city === 'Murree') this.renderMurreeProcedural(ctx, offsets);
+            else if (city === 'Naran') this.renderNaranProcedural(ctx, offsets);
+        } else {
+            // Image-based cities: sky, far buildings, near buildings
+            if (bg.sky) {
+                this.drawTiledLayer(ctx, bg.sky.key, this.layers[0].offset,
+                    bg.sky.srcY, bg.sky.srcH, bg.sky.dstY, bg.sky.dstH, bg.sky.alpha);
+            }
+            if (bg.farBuild) {
+                this.drawTiledLayer(ctx, bg.farBuild.key, this.layers[1].offset,
+                    bg.farBuild.srcY, bg.farBuild.srcH, bg.farBuild.dstY, bg.farBuild.dstH, bg.farBuild.alpha);
+            }
+            if (bg.nearBuild) {
+                this.drawTiledLayer(ctx, bg.nearBuild.key, this.layers[2].offset,
+                    bg.nearBuild.srcY, bg.nearBuild.srcH, bg.nearBuild.dstY, bg.nearBuild.dstH, bg.nearBuild.alpha);
+            }
+        }
+
         this.renderGround(ctx, theme, W, H, city);
+        this.renderNearDecorations(ctx, theme, city, this.layers[3].offset);
     },
 
-    renderFarLayer(ctx, theme, W, H, city) {
-        const layer = this.layers[0];
-        const baseY = H * 0.35;
-        const imgs = this.cityImages[city] || {};
-
-        // Try real background images first
-        if (imgs.far && this.drawTiledLayer(ctx, imgs.far, layer.offset, 0, H * 0.6, 1)) {
-            return;
-        }
-
-        // Islamabad: Faisal Mosque overlay
-        if (city === 'Islamabad') {
-            // Margalla Hills
-            if (this.drawTiledLayer(ctx, 'bg_margalla', layer.offset, baseY - 80, 180, 0.8)) return;
-            if (this.drawTiledLayer(ctx, 'bg_faisal_mosque', layer.offset, baseY - 40, 100, 0.6)) return;
-        }
-
-        // Vector fallback: procedural far layer
-        if (city === 'Islamabad' && theme.hills) {
-            ctx.fillStyle = theme.hills;
-            ctx.globalAlpha = 0.7;
-            ctx.beginPath();
-            ctx.moveTo(0, baseY + 20);
-            ctx.lineTo(100, baseY - 60);
-            ctx.lineTo(200, baseY - 30);
-            ctx.lineTo(350, baseY - 80);
-            ctx.lineTo(500, baseY - 40);
-            ctx.lineTo(650, baseY - 70);
-            ctx.lineTo(800, baseY - 20);
-            ctx.lineTo(800, baseY + 20);
-            ctx.fill();
-            ctx.fillStyle = '#fff';
-            ctx.globalAlpha = 0.5;
-            ctx.fillRect(345, baseY - 80, 12, 6);
-            ctx.fillRect(645, baseY - 70, 10, 5);
-        }
-
-        if (city === 'Murree') {
-            ctx.fillStyle = theme.pine || '#1B5E20';
-            ctx.globalAlpha = 0.6;
-            ctx.beginPath();
-            ctx.moveTo(0, baseY + 30);
-            ctx.lineTo(80, baseY - 50);
-            ctx.lineTo(160, baseY - 20);
-            ctx.lineTo(300, baseY - 70);
-            ctx.lineTo(450, baseY - 40);
-            ctx.lineTo(600, baseY - 60);
-            ctx.lineTo(800, baseY - 10);
-            ctx.lineTo(800, baseY + 30);
-            ctx.fill();
-            ctx.fillStyle = '#fff';
-            ctx.globalAlpha = 0.4;
-            ctx.fillRect(295, baseY - 70, 15, 8);
-            ctx.fillRect(595, baseY - 60, 12, 6);
-            ctx.fillStyle = '#1B5E20';
-            ctx.globalAlpha = 0.7;
-            for (let i = 0; i < 8; i++) {
-                const tx = (i * 120 - layer.offset * 0.3) % 1600;
-                const drawX = ((tx % 1600) + 1600) % 1600 - 200;
-                if (drawX > -40 && drawX < W + 40) {
-                    ctx.fillStyle = '#3E2723';
-                    ctx.fillRect(drawX + 8, baseY - 20, 4, 20);
-                    ctx.fillStyle = '#1B5E20';
-                    ctx.beginPath();
-                    ctx.moveTo(drawX + 10, baseY - 50);
-                    ctx.lineTo(drawX, baseY - 20);
-                    ctx.lineTo(drawX + 20, baseY - 20);
-                    ctx.fill();
-                }
-            }
-        }
-
-        if (city === 'Naran') {
-            ctx.fillStyle = theme.mountain || '#37474F';
-            ctx.globalAlpha = 0.7;
-            ctx.beginPath();
-            ctx.moveTo(0, baseY + 20);
-            ctx.lineTo(60, baseY - 80);
-            ctx.lineTo(150, baseY - 40);
-            ctx.lineTo(250, baseY - 90);
-            ctx.lineTo(380, baseY - 50);
-            ctx.lineTo(500, baseY - 100);
-            ctx.lineTo(650, baseY - 60);
-            ctx.lineTo(800, baseY - 30);
-            ctx.lineTo(800, baseY + 20);
-            ctx.fill();
-            ctx.fillStyle = '#fff';
-            ctx.globalAlpha = 0.6;
-            ctx.fillRect(245, baseY - 90, 18, 10);
-            ctx.fillRect(495, baseY - 100, 20, 12);
-            ctx.fillRect(645, baseY - 60, 14, 8);
-            ctx.fillStyle = theme.river || '#1565C0';
-            ctx.globalAlpha = 0.4;
-            ctx.fillRect(0, baseY + 10, W, 20);
-            ctx.fillStyle = 'rgba(100, 181, 246, 0.3)';
-            for (let i = 0; i < 5; i++) {
-                const rx = (Date.now() * 0.02 + i * 160) % 900 - 50;
-                ctx.fillRect(rx, baseY + 15, 80, 3);
-            }
-        }
-
-        // Generic far skyline (all cities)
-        ctx.fillStyle = theme.far;
-        ctx.globalAlpha = 0.5;
-        for (let i = 0; i < 20; i++) {
-            const x = (i * 130 - layer.offset) % 1600;
-            const drawX = ((x % 1600) + 1600) % 1600 - 200;
-            if (drawX > -120 && drawX < W + 120) {
-                const h = 40 + (i * 17 % 40);
-                if (i % 4 === 0) {
-                    ctx.fillRect(drawX + 8, baseY - h, 6, h);
-                    ctx.fillRect(drawX + 2, baseY - h, 18, 6);
-                    ctx.fillRect(drawX + 5, baseY - h - 10, 12, 12);
-                    ctx.beginPath();
-                    ctx.arc(drawX + 11, baseY - h - 10, 8, Math.PI, 0);
-                    ctx.fill();
-                } else if (i % 4 === 1) {
-                    ctx.beginPath();
-                    ctx.moveTo(drawX - 10, baseY);
-                    ctx.lineTo(drawX + 30, baseY - h);
-                    ctx.lineTo(drawX + 50, baseY - h + 10);
-                    ctx.lineTo(drawX + 80, baseY);
-                    ctx.fill();
-                } else if (i % 4 === 2) {
-                    ctx.fillRect(drawX + 18, baseY - h * 0.3, 4, h * 0.3);
-                    ctx.beginPath();
-                    ctx.arc(drawX + 20, baseY - h * 0.4, h * 0.25, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.beginPath();
-                    ctx.arc(drawX + 34, baseY - h * 0.35, h * 0.2, 0, Math.PI * 2);
-                    ctx.fill();
-                } else {
-                    ctx.fillRect(drawX, baseY - h, 40, h);
-                    ctx.fillRect(drawX + 45, baseY - h * 0.7, 30, h * 0.7);
-                }
-            }
-        }
-        ctx.globalAlpha = 1;
-    },
-
-    renderMidLayer(ctx, theme, W, H, city) {
-        const layer = this.layers[1];
-        const baseY = H * 0.55;
-        const imgs = this.cityImages[city] || {};
-
-        // Try real background images first
-        if (imgs.mid && this.drawTiledLayer(ctx, imgs.mid, layer.offset, H * 0.2, H * 0.5, 1)) {
-            return;
-        }
-
-        // Islamabad: sky_scrapper overlay
-        if (city === 'Islamabad') {
-            if (this.drawTiledLayer(ctx, 'bg_sky_scrapper', layer.offset, H * 0.15, H * 0.4, 0.5)) return;
-        }
-
-        // Vector fallback
-        ctx.fillStyle = theme.mid;
-        ctx.globalAlpha = 0.8;
-        for (let i = 0; i < 20; i++) {
-            const x = (i * 100 - layer.offset) % 1600;
-            const drawX = ((x % 1600) + 1600) % 1600 - 200;
-            if (drawX > -100 && drawX < W + 100) {
-                const h = 50 + (i * 13 % 40);
-                const type = i % 3;
-                if (type === 0) {
-                    ctx.fillRect(drawX, baseY - h, 55, h);
-                    ctx.fillStyle = '#FFFF88';
-                    for (let wy = 8; wy < h - 6; wy += 14) {
-                        for (let wx = 6; wx < 48; wx += 12) {
-                            const lit = ((i * 7 + wx + wy) % 5) > 1;
-                            ctx.fillStyle = lit ? '#FFFF88' : '#554400';
-                            ctx.fillRect(drawX + wx, baseY - h + wy, 6, 8);
-                        }
-                    }
-                    ctx.fillStyle = theme.mid;
-                } else if (type === 1) {
-                    ctx.fillStyle = '#5C3317';
-                    ctx.fillRect(drawX + 18, baseY - h * 0.3, 6, h * 0.3);
-                    ctx.fillStyle = '#228B22';
-                    ctx.beginPath();
-                    ctx.arc(drawX + 21, baseY - h * 0.4, h * 0.22, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.fillStyle = '#1B7A1B';
-                    ctx.beginPath();
-                    ctx.arc(drawX + 16, baseY - h * 0.35, h * 0.15, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.fillStyle = theme.mid;
-                } else {
-                    ctx.fillStyle = '#666';
-                    ctx.fillRect(drawX + 4, baseY - h, 3, h);
-                    ctx.fillRect(drawX - 10, baseY - h, 26, 3);
-                    ctx.strokeStyle = '#333';
-                    ctx.lineWidth = 1;
-                    ctx.beginPath();
-                    ctx.moveTo(drawX - 8, baseY - h + 1);
-                    ctx.quadraticCurveTo(drawX + 30, baseY - h + 8, drawX + 70, baseY - h + 1);
-                    ctx.stroke();
-                    ctx.beginPath();
-                    ctx.moveTo(drawX - 8, baseY - h + 2);
-                    ctx.quadraticCurveTo(drawX + 25, baseY - h + 10, drawX + 70, baseY - h + 2);
-                    ctx.stroke();
-                }
-            }
-        }
-        ctx.globalAlpha = 1;
-    },
-
-    renderNearLayer(ctx, theme, W, H, city) {
-        const layer = this.layers[2];
-        const baseY = H * 0.7;
-        const imgs = this.cityImages[city] || {};
-
-        // Try real background images first
-        if (imgs.near && this.drawTiledLayer(ctx, imgs.near, layer.offset, H * 0.35, H * 0.45, 0.9)) {
-            return;
-        }
-
-        // Vector fallback
-        ctx.fillStyle = theme.near;
-        ctx.globalAlpha = 0.9;
-        for (let i = 0; i < 20; i++) {
-            const x = (i * 80 - layer.offset) % 1600;
-            const drawX = ((x % 1600) + 1600) % 1600 - 200;
-            if (drawX > -80 && drawX < W + 80) {
-                const type = i % 4;
-                if (type === 0) {
-                    const h = 30 + (i * 7 % 20);
-                    ctx.fillRect(drawX, baseY - h, 50, h);
-                    ctx.fillStyle = '#CC0000';
-                    ctx.fillRect(drawX - 4, baseY - h - 6, 58, 8);
-                    ctx.fillStyle = '#FFD700';
-                    ctx.fillRect(drawX - 4, baseY - h + 2, 58, 2);
-                    ctx.fillStyle = '#8B4513';
-                    ctx.fillRect(drawX + 4, baseY - h + 4, 12, 10);
-                    ctx.fillStyle = '#FF8C00';
-                    ctx.fillRect(drawX + 20, baseY - h + 6, 8, 6);
-                    ctx.fillStyle = theme.near;
-                } else if (type === 1) {
-                    ctx.fillStyle = '#555';
-                    ctx.fillRect(drawX + 3, baseY - 45, 3, 45);
-                    ctx.fillStyle = '#444';
-                    ctx.fillRect(drawX - 2, baseY - 48, 13, 5);
-                    ctx.fillStyle = '#FFFF88';
-                    ctx.fillRect(drawX, baseY - 46, 9, 2);
-                    ctx.fillStyle = 'rgba(255,255,136,0.15)';
-                    ctx.beginPath();
-                    ctx.arc(drawX + 5, baseY - 44, 20, 0, Math.PI * 2);
-                    ctx.fill();
-                } else if (type === 2) {
-                    if (city === 'GT Road') {
-                        ctx.fillStyle = '#333';
-                        ctx.fillRect(drawX - 10, baseY - 55, 70, 40);
-                        ctx.fillStyle = '#fff';
-                        ctx.fillRect(drawX - 8, baseY - 53, 66, 36);
-                        ctx.fillStyle = '#CC0000';
-                        ctx.fillRect(drawX - 6, baseY - 51, 62, 10);
-                        ctx.fillStyle = '#fff';
-                        ctx.font = '6px monospace';
-                        const ads = ['CHAI Nahi CHALEGI!', 'SPEED KILLED THE CAT', 'PAY TOLL OR WALK', 'M-TAG = M-SAVING'];
-                        ctx.fillText(ads[i % ads.length], drawX - 4, baseY - 44);
-                        ctx.fillStyle = '#333';
-                        ctx.fillRect(drawX - 6, baseY - 38, 62, 18);
-                    } else {
-                        ctx.fillStyle = '#8B4513';
-                        ctx.fillRect(drawX, baseY - 30, 30, 20);
-                        ctx.fillStyle = '#FFD700';
-                        ctx.fillRect(drawX + 2, baseY - 28, 26, 16);
-                        ctx.fillStyle = '#CC0000';
-                        ctx.fillRect(drawX + 4, baseY - 24, 22, 8);
-                    }
-                } else {
-                    ctx.fillStyle = '#8B6914';
-                    ctx.fillRect(drawX, baseY - 10, 14, 10);
-                    ctx.fillStyle = '#A0522D';
-                    ctx.fillRect(drawX + 16, baseY - 8, 12, 8);
-                    ctx.fillStyle = '#FF8C00';
-                    ctx.fillRect(drawX + 4, baseY - 14, 6, 4);
-                }
-                ctx.fillStyle = theme.near;
-            }
-        }
-        ctx.globalAlpha = 1;
-    },
-
+    // --------------------------------------------------------
+    // CHANGE 3: 3-layer ground system with per-city textures
+    // --------------------------------------------------------
     renderGround(ctx, theme, W, H, city) {
-        const groundY = H - 80;
         const levelData = Levels.currentLevelData;
         const isUphill = levelData && levelData.uphill;
 
@@ -368,46 +126,334 @@ const Camera = {
             ctx.rotate(-0.03);
             ctx.translate(0, -H);
         }
-        ctx.fillStyle = theme.ground;
-        ctx.fillRect(0, groundY, W, 80);
 
-        ctx.fillStyle = theme.pavement;
-        ctx.fillRect(0, groundY, W, 4);
+        // ---- Layer A: Pavement / Road Surface (y: 395-420) ----
+        const pavementY = 395;
+        const pavementH = 25;
 
-        ctx.fillStyle = city === 'Murree' || city === 'Naran' ? '#4E342E' : '#555';
-        ctx.fillRect(0, groundY + 30, W, 50);
+        switch (city) {
+            case 'Lahore':
+                ctx.fillStyle = '#B8A898';
+                ctx.fillRect(0, pavementY, W, pavementH);
+                ctx.strokeStyle = '#A09080';
+                ctx.lineWidth = 1;
+                for (let x = 0; x < W; x += 60) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, pavementY + 12);
+                    ctx.lineTo(x + 40, pavementY + 12);
+                    ctx.stroke();
+                }
+                ctx.fillStyle = '#888';
+                for (let i = 0; i < 25; i++) {
+                    const px = (i * 37 + 10) % W;
+                    const py = pavementY + 4 + (i * 7) % 18;
+                    ctx.beginPath();
+                    ctx.arc(px, py, 1.5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                break;
 
-        ctx.fillStyle = 'rgba(0,0,0,0.15)';
-        for (let x = 0; x < W; x += 60) ctx.fillRect(x, groundY + 2, 2, 28);
+            case 'GT Road':
+                ctx.fillStyle = '#666666';
+                ctx.fillRect(0, pavementY, W, pavementH);
+                ctx.fillStyle = '#FFC107';
+                ctx.fillRect(0, pavementY, W, 2);
+                ctx.fillStyle = '#FFFFFF';
+                for (let x = -40; x < W + 40; x += 80) {
+                    ctx.fillRect(x, pavementY + 11, 30, 3);
+                }
+                break;
 
-        if (city === 'GT Road' || city === 'Islamabad') {
-            ctx.fillStyle = '#FFD700';
-            for (let x = -50; x < W + 50; x += 80) ctx.fillRect(x, groundY + 52, 40, 3);
-            ctx.fillStyle = '#fff';
-            ctx.fillRect(0, groundY + 30, W, 1);
-            ctx.fillRect(0, groundY + 78, W, 1);
-        } else if (city === 'Murree') {
-            ctx.fillStyle = '#fff';
-            for (let x = -50; x < W + 50; x += 100) {
-                ctx.fillRect(x, groundY + 50, 30, 2);
+            case 'Islamabad':
+                ctx.fillStyle = '#C0C0C0';
+                ctx.fillRect(0, pavementY, W, pavementH);
+                ctx.strokeStyle = '#AAAAAA';
+                ctx.lineWidth = 1;
+                for (let x = 0; x < W; x += 40) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, pavementY);
+                    ctx.lineTo(x, pavementY + pavementH);
+                    ctx.stroke();
+                }
+                break;
+
+            case 'Murree':
+                ctx.fillStyle = '#8B7355';
+                ctx.fillRect(0, pavementY, W, pavementH);
+                ctx.fillStyle = '#FFFFFF';
+                for (let x = 50; x < W; x += 100) {
+                    ctx.beginPath();
+                    ctx.ellipse(x, pavementY + 8, 10, 3, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.strokeStyle = '#6B5540';
+                ctx.lineWidth = 0.5;
+                for (let i = 0; i < 15; i++) {
+                    const ax = (i * 53 + 20) % W;
+                    const ay = pavementY + 5 + (i * 11) % 15;
+                    ctx.beginPath();
+                    ctx.moveTo(ax, ay);
+                    ctx.lineTo(ax + 8, ay - 3);
+                    ctx.stroke();
+                }
+                break;
+
+            case 'Naran':
+                ctx.fillStyle = '#6B5B45';
+                ctx.fillRect(0, pavementY, W, pavementH);
+                ctx.fillStyle = '#777';
+                for (let x = 40; x < W; x += 80) {
+                    ctx.beginPath();
+                    ctx.ellipse(x, pavementY + 14, 7.5, 5, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                const riverEdge = (Date.now() * 0.02) % 80;
+                ctx.fillStyle = '#1565C0';
+                ctx.globalAlpha = 0.35;
+                ctx.fillRect(W - 10, pavementY, 10, pavementH);
+                ctx.globalAlpha = 1;
+                break;
+
+            default:
+                ctx.fillStyle = theme.pavement || '#A0A0A0';
+                ctx.fillRect(0, pavementY, W, pavementH);
+                break;
+        }
+
+        // ---- Layer B: Ground Edge shadow (y: 420-430) ----
+        const edgeGrad = ctx.createLinearGradient(0, 420, 0, 430);
+        edgeGrad.addColorStop(0, 'rgba(0,0,0,0.5)');
+        edgeGrad.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = edgeGrad;
+        ctx.fillRect(0, 420, W, 10);
+
+        // ---- Layer C: Below ground void (y: 430-450) ----
+        switch (city) {
+            case 'Lahore':    ctx.fillStyle = '#3B2A1A'; break;
+            case 'GT Road':   ctx.fillStyle = '#4A4040'; break;
+            case 'Islamabad': ctx.fillStyle = '#555555'; break;
+            case 'Murree':    ctx.fillStyle = '#3E2E2E'; break;
+            case 'Naran':     ctx.fillStyle = '#2E2010'; break;
+            default:          ctx.fillStyle = '#3B2A1A'; break;
+        }
+        ctx.fillRect(0, 430, W, 20);
+
+        ctx.restore();
+    },
+
+    // --------------------------------------------------------
+    // CHANGE 7: Near-layer fast-scrolling decorations
+    // --------------------------------------------------------
+    renderNearDecorations(ctx, theme, city, layerOffset) {
+        ctx.save();
+
+        switch (city) {
+            case 'Lahore': {
+                // Lamp posts every 200px
+                const postOffset = layerOffset % 200;
+                for (let x = -200 + postOffset; x < 900; x += 200) {
+                    ctx.fillStyle = '#444';
+                    ctx.fillRect(x, 340, 5, 60);
+                    ctx.fillStyle = '#FFD700';
+                    ctx.fillRect(x - 8, 335, 20, 8);
+                    ctx.save();
+                    ctx.globalAlpha = 0.1;
+                    ctx.fillStyle = '#FFD700';
+                    ctx.beginPath();
+                    ctx.ellipse(x, 340, 30, 20, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+                // Hanging pennants
+                const colours = ['#E53935', '#43A047', '#1E88E5', '#FFD600'];
+                for (let x = -150 + postOffset; x < 850; x += 200) {
+                    for (let b = 0; b < 5; b++) {
+                        ctx.fillStyle = colours[b % colours.length];
+                        ctx.beginPath();
+                        ctx.moveTo(x + b * 20, 355);
+                        ctx.lineTo(x + b * 20 + 8, 368);
+                        ctx.lineTo(x + b * 20 + 16, 355);
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                }
+                break;
             }
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-            for (let x = 0; x < W; x += 120) {
-                ctx.fillRect(x + 20, groundY + 32, 40, 4);
+
+            case 'GT Road': {
+                // Roadside milestones
+                const msOffset = layerOffset % 400;
+                for (let x = -400 + msOffset; x < 900; x += 400) {
+                    ctx.fillStyle = '#228B22';
+                    ctx.fillRect(x, 350, 16, 50);
+                    ctx.fillStyle = '#fff';
+                    ctx.fillRect(x - 2, 350, 20, 22);
+                    ctx.fillStyle = '#222';
+                    ctx.font = '6px monospace';
+                    ctx.fillText('ISB', x + 1, 360);
+                    ctx.fillText('200km', x - 1, 368);
+                }
+                // Roadside bushes
+                const bushOffset = layerOffset % 150;
+                for (let x = -150 + bushOffset; x < 900; x += 150) {
+                    ctx.fillStyle = '#2E7D32';
+                    ctx.beginPath();
+                    ctx.ellipse(x, 390, 18, 10, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#388E3C';
+                    ctx.beginPath();
+                    ctx.ellipse(x + 8, 386, 12, 8, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                break;
             }
-        } else if (city === 'Naran') {
-            ctx.fillStyle = '#3E2723';
-            for (let x = 0; x < W; x += 50) {
-                ctx.fillRect(x + 10, groundY + 32, 20, 3);
-            }
-            ctx.fillStyle = 'rgba(21, 101, 192, 0.3)';
-            ctx.fillRect(0, groundY + 70, W, 10);
-        } else {
-            ctx.fillStyle = 'rgba(139, 119, 85, 0.3)';
-            for (let x = 0; x < W; x += 40) {
-                ctx.fillRect(x + Math.sin(x) * 5, groundY + 30, 20, 2);
+
+            case 'Islamabad': {
+                // Manicured hedges
+                const hedgeOffset = layerOffset % 120;
+                for (let x = -120 + hedgeOffset; x < 900; x += 120) {
+                    ctx.fillStyle = '#2E7D32';
+                    ctx.fillRect(x, 375, 80, 22);
+                    ctx.fillStyle = '#1B5E20';
+                    ctx.fillRect(x, 375, 80, 5);
+                }
+                // Clean lamp posts
+                const lampOffset = layerOffset % 250;
+                for (let x = -250 + lampOffset; x < 900; x += 250) {
+                    ctx.fillStyle = '#9E9E9E';
+                    ctx.fillRect(x, 330, 6, 70);
+                    ctx.fillStyle = '#BDBDBD';
+                    ctx.fillRect(x - 12, 326, 30, 6);
+                    ctx.save();
+                    ctx.fillStyle = 'rgba(200,230,255,0.25)';
+                    ctx.beginPath();
+                    ctx.ellipse(x + 3, 330, 25, 18, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+                break;
             }
         }
+
         ctx.restore();
+    },
+
+    // --------------------------------------------------------
+    // Procedural Murree background (no images — stars, mountains, pines, snow)
+    // --------------------------------------------------------
+    renderMurreeProcedural(ctx, layerOffsets) {
+        // Sky: deep navy-indigo gradient
+        const skyG = ctx.createLinearGradient(0, 0, 0, 180);
+        skyG.addColorStop(0, '#0D1B3E');
+        skyG.addColorStop(1, '#1A2F5A');
+        ctx.fillStyle = skyG;
+        ctx.fillRect(0, 0, 800, 180);
+
+        // Stars: 60 small dots
+        for (let i = 0; i < 60; i++) {
+            const sx = (i * 127 + layerOffsets[0] * 0.5) % 800;
+            const sy = (i * 53) % 160;
+            const alpha = 0.5 + 0.5 * Math.sin(Date.now() * 0.001 + i);
+            ctx.fillStyle = `rgba(255,255,255,${alpha * 0.8})`;
+            ctx.fillRect(sx, sy, i % 3 === 0 ? 2 : 1, i % 3 === 0 ? 2 : 1);
+        }
+
+        // Far mountains: dark silhouette
+        ctx.fillStyle = '#0A1628';
+        ctx.beginPath();
+        const mPoints = [0,280, 80,160, 150,220, 250,120, 320,200, 420,90, 500,180, 620,100, 720,200, 800,150, 800,280];
+        for (let i = 0; i < mPoints.length; i += 2) {
+            i === 0 ? ctx.moveTo(mPoints[i], mPoints[i + 1]) : ctx.lineTo(mPoints[i], mPoints[i + 1]);
+        }
+        ctx.closePath();
+        ctx.fill();
+
+        // Pine trees: dark green triangles at mid layer, scrolling
+        ctx.fillStyle = '#0D2B0D';
+        const treeOffset = (layerOffsets[1] * 0.4) % 120;
+        for (let i = -120; i < 900; i += 80) {
+            const tx = i - treeOffset;
+            const th = 60 + (i % 30);
+            ctx.beginPath();
+            ctx.moveTo(tx, 360);
+            ctx.lineTo(tx - 20, 360 - th);
+            ctx.lineTo(tx + 20, 360 - th);
+            ctx.closePath();
+            ctx.fill();
+            // Second layer of tree (lighter)
+            ctx.fillStyle = '#1A4A1A';
+            ctx.beginPath();
+            ctx.moveTo(tx, 370);
+            ctx.lineTo(tx - 15, 370 - th * 0.6);
+            ctx.lineTo(tx + 15, 370 - th * 0.6);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = '#0D2B0D';
+        }
+
+        // Snow: white horizontal streaks
+        ctx.fillStyle = 'rgba(255,255,255,0.7)';
+        const snowOffset = (layerOffsets[2] * 1.2) % 800;
+        for (let i = 0; i < 30; i++) {
+            const sx = (i * 150 + snowOffset) % 850 - 25;
+            const sy = (i * 37) % 380;
+            ctx.fillRect(sx, sy, 3 + (i % 4), 1);
+        }
+    },
+
+    // --------------------------------------------------------
+    // Procedural Naran background (snow-capped peaks, river)
+    // --------------------------------------------------------
+    renderNaranProcedural(ctx, layerOffsets) {
+        // Sky: dawn blue
+        const skyG = ctx.createLinearGradient(0, 0, 0, 200);
+        skyG.addColorStop(0, '#0D47A1');
+        skyG.addColorStop(0.6, '#1976D2');
+        skyG.addColorStop(1, '#B3E5FC');
+        ctx.fillStyle = skyG;
+        ctx.fillRect(0, 0, 800, 200);
+
+        // Snow-capped mountain peaks
+        const peakData = [
+            { x: 100, peakY: 60, baseY: 280, w: 200 },
+            { x: 320, peakY: 20, baseY: 290, w: 280 },
+            { x: 600, peakY: 50, baseY: 275, w: 240 },
+        ];
+        const mtOffset = (layerOffsets[0] * 0.1) % 800;
+        for (const p of peakData) {
+            const px = p.x - mtOffset;
+            // Rock body
+            ctx.fillStyle = '#37474F';
+            ctx.beginPath();
+            ctx.moveTo(px - p.w / 2, p.baseY);
+            ctx.lineTo(px, p.peakY);
+            ctx.lineTo(px + p.w / 2, p.baseY);
+            ctx.closePath();
+            ctx.fill();
+            // Snow cap (top 30% of mountain)
+            ctx.fillStyle = '#ECEFF1';
+            const snowBase = p.peakY + (p.baseY - p.peakY) * 0.3;
+            ctx.beginPath();
+            ctx.moveTo(px - (p.w * 0.15), snowBase);
+            ctx.lineTo(px, p.peakY);
+            ctx.lineTo(px + (p.w * 0.15), snowBase);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // River at bottom: animated blue strip
+        const riverY = 400;
+        const riverG = ctx.createLinearGradient(0, riverY, 0, 430);
+        riverG.addColorStop(0, '#1565C0');
+        riverG.addColorStop(1, '#0D47A1');
+        ctx.fillStyle = riverG;
+        ctx.fillRect(0, riverY, 800, 30);
+        // River waves
+        const waveOffset = (Date.now() * 0.03) % 80;
+        ctx.fillStyle = 'rgba(100, 181, 246, 0.5)';
+        for (let i = -80; i < 900; i += 80) {
+            ctx.fillRect(i + waveOffset, riverY + 5, 40, 3);
+            ctx.fillRect(i + waveOffset + 20, riverY + 15, 30, 2);
+        }
     },
 };

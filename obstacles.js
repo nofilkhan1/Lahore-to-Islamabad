@@ -9,12 +9,12 @@ const Obstacles = {
     POOL_COINS: 20,
     obstacleSpawnTimer: 0,
     coinSpawnTimer: 0,
-    obstacleSpawnInterval: 90,
-    coinSpawnInterval: 50,
+    obstacleSpawnInterval: 60,
+    coinSpawnInterval: 35,
     groundY: 370,
 
     init() {
-        this.groundY = 450 - 64 - 16;
+        this.groundY = 395 - 64;
         for (let i = 0; i < this.POOL_OBSTACLES; i++) {
             this.obstacles.push({ active: false, type: '', x: 0, y: 0, w: 0, h: 0, speed: 0, triggered: false, nearMissed: false, dogState: 'idle', dogStateTimer: 0, dogAccel: 0, tollReduced: false });
         }
@@ -732,258 +732,86 @@ const Obstacles = {
         const x = Math.round(coin.x);
         const y = Math.round(coin.y);
         const bob = Math.sin(coin.bobTimer * 3) * 2;
-
-        // Try image first — map coin types to actual asset keys
-        const coinImgMap = {
-            'cash10': 'rupee_note', 'cash50': 'rupee_note', 'cash100': 'rupee_note',
-            'cash500': 'rupee_note', 'petrol': 'petrol_bottle', 'bikeKey': 'key',
-        };
-        const imgKey = coinImgMap[coin.type];
-        if (imgKey && AssetLoader.has(imgKey)) {
-            AssetLoader.draw(ctx, imgKey, x, y + bob, coin.w, coin.h);
-            return;
-        }
-
-        // Sparkle glow for all collectibles
-        ctx.fillStyle = 'rgba(255, 215, 0, 0.15)';
-        ctx.beginPath();
-        ctx.arc(x + coin.w / 2, y + coin.h / 2 + bob, 12, 0, Math.PI * 2);
-        ctx.fill();
+        const pulse = 0.85 + 0.15 * Math.sin(Date.now() * 0.005 + coin.x);
 
         switch (coin.type) {
             case 'cash10':
-                ctx.fillStyle = '#4CAF50';
-                ctx.fillRect(x, y + bob, 12, 16);
-                ctx.fillStyle = '#66BB6A';
-                ctx.fillRect(x + 1, y + 1 + bob, 10, 14);
-                ctx.fillStyle = '#fff';
-                ctx.fillRect(x + 3, y + 5 + bob, 6, 2);
-                ctx.fillRect(x + 5, y + 3 + bob, 2, 6);
-                break;
             case 'cash50':
-                ctx.fillStyle = '#388E3C';
-                ctx.fillRect(x, y + bob, 12, 16);
-                ctx.fillStyle = '#4CAF50';
-                ctx.fillRect(x + 1, y + 1 + bob, 10, 14);
-                ctx.fillStyle = '#fff';
-                ctx.fillRect(x + 2, y + 5 + bob, 8, 2);
-                ctx.fillRect(x + 4, y + 3 + bob, 4, 6);
-                break;
             case 'cash100':
-                ctx.fillStyle = '#2E7D32';
-                ctx.fillRect(x, y + bob, 12, 16);
-                ctx.fillStyle = '#388E3C';
-                ctx.fillRect(x + 1, y + 1 + bob, 10, 14);
-                ctx.fillStyle = '#FFD700';
-                ctx.fillRect(x + 2, y + 4 + bob, 8, 3);
-                ctx.fillStyle = '#fff';
-                ctx.fillRect(x + 4, y + 3 + bob, 4, 5);
-                break;
             case 'cash500':
-                ctx.fillStyle = '#1B5E20';
-                ctx.fillRect(x, y + bob, 12, 16);
-                ctx.fillStyle = '#2E7D32';
-                ctx.fillRect(x + 1, y + 1 + bob, 10, 14);
-                ctx.fillStyle = '#FFD700';
-                ctx.fillRect(x + 1, y + 4 + bob, 10, 3);
+                ctx.save();
+                ctx.globalAlpha = pulse;
+                if (AssetLoader.draw(ctx, 'rupee_note', x, y + bob, coin.w, coin.h)) {
+                    ctx.restore();
+                    return;
+                }
+                ctx.fillStyle = coin.type === 'cash500' ? '#4CAF50' :
+                                coin.type === 'cash100' ? '#2196F3' :
+                                coin.type === 'cash50'  ? '#FF9800' : '#9E9E9E';
+                ctx.fillRect(x, y + bob, coin.w, coin.h);
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(x + 1, y + 1 + bob, coin.w - 2, coin.h - 2);
                 ctx.fillStyle = '#fff';
-                ctx.fillRect(x + 3, y + 3 + bob, 6, 2);
-                ctx.fillRect(x + 2, y + 9 + bob, 8, 1);
-                ctx.fillRect(x + 2, y + 11 + bob, 8, 1);
+                ctx.font = `bold ${Math.min(coin.w, coin.h) - 4}px monospace`;
+                ctx.textAlign = 'center';
+                ctx.fillText('\u20A8', x + coin.w / 2, y + coin.h - 3 + bob);
+                ctx.globalAlpha = pulse * 0.3;
+                ctx.strokeStyle = '#FFD700';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(x - 3, y - 3 + bob, coin.w + 6, coin.h + 6);
+                ctx.restore();
                 break;
-            case 'bikeKey':
-                // Key bow (round top)
-                ctx.fillStyle = '#FFD700';
-                ctx.beginPath();
-                ctx.arc(x + 8, y + 4 + bob, 5, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.fillStyle = '#DAA520';
-                ctx.beginPath();
-                ctx.arc(x + 8, y + 4 + bob, 3, 0, Math.PI * 2);
-                ctx.fill();
-                // Shaft
-                ctx.fillStyle = '#FFD700';
-                ctx.fillRect(x + 6, y + 8 + bob, 4, 6);
-                // Bit
-                ctx.fillRect(x + 4, y + 12 + bob, 6, 2);
-                ctx.fillRect(x + 4, y + 10 + bob, 2, 4);
-                // Sparkle
-                ctx.fillStyle = '#FFF';
-                ctx.fillRect(x + 2, y + bob, 2, 2);
-                ctx.fillRect(x + 12, y + 2 + bob, 2, 2);
-                break;
+
             case 'petrol':
-                // Bottle body
-                ctx.fillStyle = '#2E7D32';
-                ctx.fillRect(x + 2, y + 4 + bob, 12, 18);
-                // Cap
-                ctx.fillStyle = '#FF0000';
-                ctx.fillRect(x + 4, y + bob, 8, 5);
-                // Label
+                ctx.save();
+                ctx.globalAlpha = pulse;
+                if (AssetLoader.draw(ctx, 'petrol_bottle', x, y + bob, coin.w, coin.h)) {
+                    ctx.restore();
+                    return;
+                }
                 ctx.fillStyle = '#FF5722';
-                ctx.fillRect(x + 3, y + 8 + bob, 10, 8);
-                ctx.fillStyle = '#fff';
-                ctx.fillRect(x + 5, y + 10 + bob, 6, 2);
-                ctx.fillRect(x + 5, y + 13 + bob, 4, 2);
-                // Liquid level
-                ctx.fillStyle = '#4CAF50';
-                ctx.fillRect(x + 3, y + 14 + bob, 10, 6);
-                break;
-            case 'chai':
-                // Cup
-                ctx.fillStyle = '#D32F2F';
-                ctx.fillRect(x + 2, y + 4 + bob, 12, 10);
-                // Cup rim
-                ctx.fillStyle = '#E57373';
-                ctx.fillRect(x + 1, y + 4 + bob, 14, 2);
-                // Handle
-                ctx.fillStyle = '#B71C1C';
-                ctx.fillRect(x + 13, y + 6 + bob, 3, 5);
-                // Chai inside
-                ctx.fillStyle = '#8D6E63';
-                ctx.fillRect(x + 3, y + 6 + bob, 10, 6);
-                // Steam wisps
-                const t = Date.now() * 0.003;
-                ctx.fillStyle = 'rgba(255,255,255,0.5)';
-                ctx.fillRect(x + 4, y - 2 + Math.sin(t) * 2 + bob, 2, 4);
-                ctx.fillRect(x + 8, y - 4 + Math.sin(t + 1) * 2 + bob, 2, 4);
-                break;
-            case 'parchi':
-                // Paper slip
-                ctx.fillStyle = '#FFF8DC';
-                ctx.fillRect(x, y + bob, 12, 16);
-                ctx.fillStyle = '#F5F0C0';
-                ctx.fillRect(x + 1, y + 1 + bob, 10, 14);
-                // Text lines
-                ctx.fillStyle = '#333';
-                ctx.fillRect(x + 2, y + 3 + bob, 8, 1);
-                ctx.fillRect(x + 2, y + 6 + bob, 8, 1);
-                ctx.fillRect(x + 2, y + 9 + bob, 6, 1);
-                // Stamp
-                ctx.fillStyle = '#CC0000';
-                ctx.fillRect(x + 6, y + 11 + bob, 5, 4);
-                break;
-            case 'jugaadRepair':
-                // Wrench icon
-                ctx.fillStyle = '#C0C0C0';
-                ctx.fillRect(x + 8, y + 2 + bob, 4, 16);
-                ctx.fillStyle = '#888';
-                ctx.fillRect(x + 4, y + 2 + bob, 12, 6);
-                // Sparkle
-                ctx.fillStyle = '#FFD700';
-                ctx.fillRect(x + 2, y + bob, 3, 3);
-                ctx.fillRect(x + 18, y + 4 + bob, 3, 3);
-                // Text
-                ctx.fillStyle = '#FF6F00';
-                ctx.font = '6px monospace';
-                ctx.fillText('REPAIR', x + 1, y + 22 + bob);
+                ctx.fillRect(x + 4, y + 4 + bob, coin.w - 8, coin.h - 4);
+                ctx.fillStyle = '#F44336';
+                ctx.fillRect(x + 7, y + bob, coin.w - 14, 6);
+                ctx.restore();
                 break;
 
-            case 'hotChai':
-                // Cup
-                ctx.fillStyle = '#D32F2F';
-                ctx.fillRect(x + 2, y + 4 + bob, 12, 10);
-                // Cup rim
-                ctx.fillStyle = '#E57373';
-                ctx.fillRect(x + 1, y + 4 + bob, 14, 2);
-                // Handle
-                ctx.fillStyle = '#B71C1C';
-                ctx.fillRect(x + 13, y + 6 + bob, 3, 5);
-                // Chai inside
-                ctx.fillStyle = '#8D6E63';
-                ctx.fillRect(x + 3, y + 6 + bob, 10, 6);
-                // Steam wisps (more steam for hot chai)
-                const th = Date.now() * 0.004;
-                ctx.fillStyle = 'rgba(255,255,255,0.7)';
-                ctx.fillRect(x + 3, y - 4 + Math.sin(th) * 3 + bob, 3, 6);
-                ctx.fillRect(x + 7, y - 6 + Math.sin(th + 1) * 3 + bob, 3, 6);
-                ctx.fillRect(x + 10, y - 3 + Math.sin(th + 2) * 2 + bob, 2, 4);
-                break;
-
-            case 'bhutta':
-                // Corn cob
-                ctx.fillStyle = '#FDD835';
-                ctx.fillRect(x + 2, y + 2 + bob, 12, 12);
-                // Kernels
-                ctx.fillStyle = '#F9A825';
-                for (let i = 0; i < 3; i++) {
-                    for (let j = 0; j < 3; j++) {
-                        ctx.fillRect(x + 3 + i * 4, y + 3 + j * 4 + bob, 3, 3);
-                    }
+            case 'bikeKey':
+                ctx.save();
+                ctx.globalAlpha = pulse;
+                if (AssetLoader.draw(ctx, 'key', x, y + bob, coin.w, coin.h)) {
+                    ctx.restore();
+                    return;
                 }
-                // Husk
-                ctx.fillStyle = '#81C784';
-                ctx.fillRect(x, y + 12 + bob, 4, 4);
-                ctx.fillRect(x + 10, y + 12 + bob, 4, 4);
-                // Char marks
-                ctx.fillStyle = '#795548';
-                ctx.fillRect(x + 4, y + 5 + bob, 2, 2);
-                ctx.fillRect(x + 8, y + 8 + bob, 2, 2);
-                break;
-
-            case 'shawl':
-                // Woolen shawl
-                ctx.fillStyle = '#9C27B0';
-                ctx.fillRect(x, y + 2 + bob, 16, 12);
-                // Pattern
-                ctx.fillStyle = '#CE93D8';
-                ctx.fillRect(x + 2, y + 4 + bob, 12, 2);
-                ctx.fillRect(x + 2, y + 8 + bob, 12, 2);
-                // Fringe
-                ctx.fillStyle = '#7B1FA2';
-                for (let i = 0; i < 4; i++) {
-                    ctx.fillRect(x + i * 4, y + 14 + bob, 2, 4);
-                }
-                break;
-
-            case 'guava':
-                // Guava fruit
-                ctx.fillStyle = '#8BC34A';
-                ctx.beginPath();
-                ctx.arc(x + 7, y + 7 + bob, 6, 0, Math.PI * 2);
-                ctx.fill();
-                // Highlight
-                ctx.fillStyle = '#AED581';
-                ctx.fillRect(x + 4, y + 4 + bob, 3, 3);
-                // Stem
-                ctx.fillStyle = '#558B2F';
-                ctx.fillRect(x + 6, y + bob, 2, 3);
-                break;
-
-            case 'jeepToken':
-                // Jeep icon
-                ctx.fillStyle = '#FF9800';
-                ctx.fillRect(x + 2, y + 4 + bob, 16, 10);
-                // Windows
-                ctx.fillStyle = '#81D4FA';
-                ctx.fillRect(x + 4, y + 6 + bob, 6, 6);
-                ctx.fillRect(x + 12, y + 6 + bob, 6, 6);
-                // Wheels
-                ctx.fillStyle = '#1A1A1A';
-                ctx.beginPath();
-                ctx.arc(x + 5, y + 16 + bob, 3, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.beginPath();
-                ctx.arc(x + 15, y + 16 + bob, 3, 0, Math.PI * 2);
-                ctx.fill();
-                // Star
+                ctx.shadowColor = '#FFD700';
+                ctx.shadowBlur = 10;
                 ctx.fillStyle = '#FFD700';
-                ctx.fillRect(x + 7, y + bob, 2, 2);
+                ctx.beginPath();
+                ctx.arc(x + coin.w / 2, y + 8 + bob, 6, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#FFA000';
+                ctx.fillRect(x + coin.w / 2 - 1, y + 12 + bob, 2, coin.h - 12);
+                ctx.shadowBlur = 0;
+                ctx.restore();
                 break;
 
-            case 'delivery':
-                // Delivery box
-                ctx.fillStyle = '#8D6E63';
-                ctx.fillRect(x, y + 2 + bob, 16, 12);
-                // Tape
-                ctx.fillStyle = '#D7CCC8';
-                ctx.fillRect(x + 6, y + 2 + bob, 4, 12);
-                // Label
+            default:
+                ctx.save();
+                ctx.globalAlpha = pulse;
+                ctx.fillStyle = 'rgba(255, 215, 0, 0.15)';
+                ctx.beginPath();
+                ctx.arc(x + coin.w / 2, y + coin.h / 2 + bob, 12, 0, Math.PI * 2);
+                ctx.fill();
                 ctx.fillStyle = '#FFD700';
-                ctx.fillRect(x + 2, y + 5 + bob, 12, 4);
-                ctx.fillStyle = '#333';
-                ctx.fillRect(x + 4, y + 6 + bob, 8, 1);
+                ctx.beginPath();
+                ctx.arc(x + coin.w / 2, y + coin.h / 2 + bob, 6, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#FFF';
+                ctx.fillRect(x + coin.w / 2 - 1, y + 2 + bob, 2, coin.h - 4);
+                ctx.restore();
                 break;
         }
+        ctx.textAlign = 'left';
     },
 };

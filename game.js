@@ -164,6 +164,8 @@ const Game = {
                 Story.startChapterIntro(this.currentChapter);
                 this.state = 'dialogue';
             }
+        } else if (this.state === 'homeScene') {
+            Story.updateHomeScene(this.deltaTime);
         } else if (this.state === 'dialogue') {
             Story.update(this.deltaTime);
         } else if (this.state === 'chapterComplete') {
@@ -470,8 +472,9 @@ const Game = {
         this.currentLevel = 0;
         this.currentChapter = 0;
         this.distance = 0;
-        this.scrollSpeed = 100;
-        this.targetScrollSpeed = 100;
+        const levelData = Levels.levels[0];
+        this.scrollSpeed = levelData ? levelData.scrollSpeed : 110;
+        this.targetScrollSpeed = this.scrollSpeed;
         this.nearMissCombo = 0;
         this.nearMissTimer = 0;
         this.tollBarrierSpawned = false;
@@ -705,7 +708,7 @@ const Game = {
     },
 
     setupMenuListeners() {
-        document.getElementById('btnStart').onclick = () => { Audio.resume(); this.showChapterIntro(0); };
+        document.getElementById('btnStart').onclick = () => { Audio.resume(); this.hideAllScreens(); this.state = 'homeScene'; Story.startHomeScene(() => { this.showChapterIntro(0); }); };
         document.getElementById('btnResume').onclick = () => this.resume();
         document.getElementById('btnRetry').onclick = () => { Audio.resume(); this.startGame(); };
         document.getElementById('btnMenu').onclick = () => {
@@ -770,6 +773,7 @@ const Game = {
         ctx.save();
         ctx.translate(Utils.screenShake.offsetX, Utils.screenShake.offsetY);
         ctx.clearRect(-10, -10, this.canvas.width + 20, this.canvas.height + 20);
+        if (this.state === 'homeScene') { Story.renderHomeScene(ctx); ctx.restore(); return; }
 
         if (this.state === 'menu') {
             Camera.render(ctx);
@@ -796,6 +800,17 @@ const Game = {
             Obstacles.render(ctx);
             Levels.renderDecorations(ctx);
             Player.render(ctx);
+            // Atmospheric depth gradient
+            const topGrad = ctx.createLinearGradient(0, 0, 0, 120);
+            topGrad.addColorStop(0, 'rgba(0,0,0,0.25)');
+            topGrad.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = topGrad;
+            ctx.fillRect(0, 0, 800, 120);
+            const bottomGrad = ctx.createLinearGradient(0, 380, 0, 450);
+            bottomGrad.addColorStop(0, 'rgba(0,0,0,0)');
+            bottomGrad.addColorStop(1, 'rgba(0,0,0,0.6)');
+            ctx.fillStyle = bottomGrad;
+            ctx.fillRect(0, 380, 800, 70);
             Particles.render(ctx);
             HUD.renderProgress(ctx);
             HUD.renderMessages(ctx);
