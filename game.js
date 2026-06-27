@@ -786,54 +786,53 @@ const Game = {
         ctx.save();
         ctx.translate(Utils.screenShake.offsetX, Utils.screenShake.offsetY);
         ctx.clearRect(-10, -10, this.canvas.width + 20, this.canvas.height + 20);
+
         if (this.state === 'homeScene') { Story.renderHomeScene(ctx); ctx.restore(); return; }
 
         if (this.state === 'menu') {
             Camera.render(ctx);
         } else if (this.state === 'chapterIntro') {
             Camera.render(ctx);
+            Levels.renderDecorations(ctx);
             Obstacles.render(ctx);
             Player.render(ctx);
+            Camera.renderDepthFog(ctx);
             this.renderChapterIntro(ctx);
         } else if (this.state === 'levelIntro') {
             Camera.render(ctx);
+            Levels.renderDecorations(ctx);
             Obstacles.render(ctx);
             Player.render(ctx);
+            Camera.renderDepthFog(ctx);
             this.renderLevelIntro(ctx);
         } else if (this.state === 'dialogue') {
             Camera.render(ctx);
+            Levels.renderDecorations(ctx);
             Obstacles.render(ctx);
             Player.render(ctx);
+            Camera.renderDepthFog(ctx);
             Story.renderDialogue(ctx);
         } else if (this.state === 'ending') {
             Story.renderGameEnding(ctx);
             Particles.render(ctx);
         } else if (this.state === 'playing' || this.state === 'paused' || this.state === 'gameOver' || this.state === 'levelComplete' || this.state === 'chapterComplete') {
             Camera.render(ctx);
-            Obstacles.render(ctx);
             Levels.renderDecorations(ctx);
+            Obstacles.render(ctx);
             Player.render(ctx);
-            // Atmospheric depth gradient
-            const topGrad = ctx.createLinearGradient(0, 0, 0, 120);
-            topGrad.addColorStop(0, 'rgba(0,0,0,0.25)');
-            topGrad.addColorStop(1, 'rgba(0,0,0,0)');
-            ctx.fillStyle = topGrad;
-            ctx.fillRect(0, 0, 800, 120);
-            const bottomGrad = ctx.createLinearGradient(0, 380, 0, 450);
-            bottomGrad.addColorStop(0, 'rgba(0,0,0,0)');
-            bottomGrad.addColorStop(1, 'rgba(0,0,0,0.6)');
-            ctx.fillStyle = bottomGrad;
-            ctx.fillRect(0, 380, 800, 70);
             Particles.render(ctx);
+            Camera.renderDepthFog(ctx);
             HUD.renderProgress(ctx);
             HUD.renderMessages(ctx);
             Modes.renderOverlay(ctx);
             HUD.renderSMS(ctx);
         } else if (this.state === 'bonusStage') {
             Camera.render(ctx);
+            Levels.renderDecorations(ctx);
             Obstacles.render(ctx);
             Player.render(ctx);
             Particles.render(ctx);
+            Camera.renderDepthFog(ctx);
             Modes.renderBonusStage(ctx);
             Modes.renderOverlay(ctx);
         }

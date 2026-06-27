@@ -14,7 +14,7 @@ const Obstacles = {
     groundY: 370,
 
     init() {
-        this.groundY = 395 - 64;
+        this.groundY = 390 - 64;
         for (let i = 0; i < this.POOL_OBSTACLES; i++) {
             this.obstacles.push({ active: false, type: '', x: 0, y: 0, w: 0, h: 0, speed: 0, triggered: false, nearMissed: false, dogState: 'idle', dogStateTimer: 0, dogAccel: 0, tollReduced: false });
         }
@@ -141,6 +141,12 @@ const Obstacles = {
         }
         obs.x = 850;
         obs.active = true;
+        // Lane variation: 30% chance to spawn in "far lane" (higher on screen)
+        if (['dog', 'rickshaw', 'carelessBike', 'constructionCone', 'mountainGoat'].includes(type)) {
+            if (Math.random() < 0.3) {
+                obs.y = 360 - obs.h;  // "far lane" — higher, appears farther
+            }
+        }
     },
 
     getObstacleTypesForLevel(level) {
@@ -253,6 +259,13 @@ const Obstacles = {
     recycle(obs) { obs.active = false; },
     recycleCoin(coin) { coin.active = false; },
 
+    getDepthScale(y) {
+        const minY = 280, maxY = 390;
+        const minScale = 0.65, maxScale = 1.0;
+        const t = Math.max(0, Math.min(1, (y - minY) / (maxY - minY)));
+        return minScale + (maxScale - minScale) * t;
+    },
+
     render(ctx) {
         for (let i = 0; i < this.obstacles.length; i++) {
             if (this.obstacles[i].active) this.renderObstacle(ctx, this.obstacles[i]);
@@ -265,6 +278,13 @@ const Obstacles = {
     renderObstacle(ctx, obs) {
         const x = Math.round(obs.x);
         const y = Math.round(obs.y);
+
+        // Depth-based scaling
+        const depthScale = this.getDepthScale(obs.y);
+        ctx.save();
+        ctx.translate(x + obs.w / 2, y + obs.h);
+        ctx.scale(depthScale, depthScale);
+        ctx.translate(-(x + obs.w / 2), -(y + obs.h));
 
         // Sprite-first rendering: try image, fall back to vector
         const spriteMap = {
@@ -726,92 +746,70 @@ const Obstacles = {
                 ctx.fillRect(x + 5, y + 1, 15, 2);
                 break;
         }
+        ctx.restore();
     },
 
     renderCoin(ctx, coin) {
+        if (!coin.active) return;
         const x = Math.round(coin.x);
         const y = Math.round(coin.y);
         const bob = Math.sin(coin.bobTimer * 3) * 2;
-        const pulse = 0.85 + 0.15 * Math.sin(Date.now() * 0.005 + coin.x);
+        const pulse = 0.82 + 0.18 * Math.sin(Date.now() * 0.006 + coin.x * 0.01);
+        ctx.save();
+        ctx.globalAlpha = pulse;
 
-        switch (coin.type) {
-            case 'cash10':
-            case 'cash50':
-            case 'cash100':
-            case 'cash500':
-                ctx.save();
-                ctx.globalAlpha = pulse;
-                if (AssetLoader.draw(ctx, 'rupee_note', x, y + bob, coin.w, coin.h)) {
-                    ctx.restore();
-                    return;
-                }
-                ctx.fillStyle = coin.type === 'cash500' ? '#4CAF50' :
-                                coin.type === 'cash100' ? '#2196F3' :
-                                coin.type === 'cash50'  ? '#FF9800' : '#9E9E9E';
-                ctx.fillRect(x, y + bob, coin.w, coin.h);
-                ctx.strokeStyle = '#fff';
-                ctx.lineWidth = 1;
-                ctx.strokeRect(x + 1, y + 1 + bob, coin.w - 2, coin.h - 2);
-                ctx.fillStyle = '#fff';
-                ctx.font = `bold ${Math.min(coin.w, coin.h) - 4}px monospace`;
-                ctx.textAlign = 'center';
-                ctx.fillText('\u20A8', x + coin.w / 2, y + coin.h - 3 + bob);
-                ctx.globalAlpha = pulse * 0.3;
-                ctx.strokeStyle = '#FFD700';
-                ctx.lineWidth = 3;
-                ctx.strokeRect(x - 3, y - 3 + bob, coin.w + 6, coin.h + 6);
-                ctx.restore();
-                break;
-
-            case 'petrol':
-                ctx.save();
-                ctx.globalAlpha = pulse;
-                if (AssetLoader.draw(ctx, 'petrol_bottle', x, y + bob, coin.w, coin.h)) {
-                    ctx.restore();
-                    return;
-                }
-                ctx.fillStyle = '#FF5722';
-                ctx.fillRect(x + 4, y + 4 + bob, coin.w - 8, coin.h - 4);
-                ctx.fillStyle = '#F44336';
-                ctx.fillRect(x + 7, y + bob, coin.w - 14, 6);
-                ctx.restore();
-                break;
-
-            case 'bikeKey':
-                ctx.save();
-                ctx.globalAlpha = pulse;
-                if (AssetLoader.draw(ctx, 'key', x, y + bob, coin.w, coin.h)) {
-                    ctx.restore();
-                    return;
-                }
-                ctx.shadowColor = '#FFD700';
-                ctx.shadowBlur = 10;
-                ctx.fillStyle = '#FFD700';
-                ctx.beginPath();
-                ctx.arc(x + coin.w / 2, y + 8 + bob, 6, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.fillStyle = '#FFA000';
-                ctx.fillRect(x + coin.w / 2 - 1, y + 12 + bob, 2, coin.h - 12);
-                ctx.shadowBlur = 0;
-                ctx.restore();
-                break;
-
-            default:
-                ctx.save();
-                ctx.globalAlpha = pulse;
-                ctx.fillStyle = 'rgba(255, 215, 0, 0.15)';
-                ctx.beginPath();
-                ctx.arc(x + coin.w / 2, y + coin.h / 2 + bob, 12, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.fillStyle = '#FFD700';
-                ctx.beginPath();
-                ctx.arc(x + coin.w / 2, y + coin.h / 2 + bob, 6, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.fillStyle = '#FFF';
-                ctx.fillRect(x + coin.w / 2 - 1, y + 2 + bob, 2, coin.h - 4);
-                ctx.restore();
-                break;
+        // Try real sprite first
+        if (coin.type === 'petrol' && AssetLoader.draw(ctx, 'petrol_bottle', x, y + bob, coin.w, coin.h)) {
+            ctx.restore(); return;
         }
+        if (coin.type === 'bikeKey' && AssetLoader.draw(ctx, 'key', x, y + bob, coin.w, coin.h)) {
+            ctx.restore(); return;
+        }
+        if (['cash10', 'cash50', 'cash100', 'cash500'].includes(coin.type) && AssetLoader.draw(ctx, 'rupee_note', x, y + bob, coin.w, coin.h)) {
+            ctx.restore(); return;
+        }
+
+        // Colored fallback by type
+        const typeColors = {
+            cash10: '#9E9E9E', cash50: '#FF9800', cash100: '#2196F3',
+            cash500: '#4CAF50', petrol: '#FF5722', bikeKey: '#FFD700',
+            chai: '#8D6E63', hotChai: '#FF8F00', parchi: '#9C27B0',
+            bhutta: '#FFC107', shawl: '#7E57C2', jugaadRepair: '#F44336',
+            guava: '#66BB6A', jeepToken: '#26A69A', delivery: '#42A5F5',
+        };
+        const col = typeColors[coin.type] || '#FFD700';
+
+        // Glow ring behind coin
+        ctx.globalAlpha = pulse * 0.3;
+        ctx.strokeStyle = col;
+        ctx.lineWidth = 3;
+        ctx.strokeRect(x - 3, y - 3 + bob, coin.w + 6, coin.h + 6);
+
+        ctx.globalAlpha = pulse;
+
+        // Coin body
+        ctx.fillStyle = col;
+        ctx.fillRect(x, y + bob, coin.w, coin.h);
+
+        // Inner border
+        ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x + 1, y + 1 + bob, coin.w - 2, coin.h - 2);
+
+        // Symbol text centered in coin
+        const symbols = {
+            cash10: '10', cash50: '50', cash100: '100', cash500: '500',
+            petrol: '\u26FD', bikeKey: '\uD83D\uDD11', chai: '\u091A\u093E\u092F', hotChai: '\u2615',
+            parchi: 'P', bhutta: '\uD83C\uDF3D', shawl: 'S', guava: 'G',
+            jugaadRepair: '\uD83D\uDD27', jeepToken: 'J', delivery: '\uD83D\uDCE6',
+        };
+        const sym = symbols[coin.type] || '\u20A8';
+        ctx.fillStyle = '#fff';
+        ctx.font = `bold ${Math.min(coin.w, coin.h) <= 12 ? 7 : 9}px monospace`;
+        ctx.textAlign = 'center';
+        ctx.fillText(sym, x + coin.w / 2, y + coin.h - 3 + bob);
         ctx.textAlign = 'left';
+
+        ctx.restore();
     },
 };
