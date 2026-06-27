@@ -161,14 +161,11 @@ const Game = {
         } else if (this.state === 'chapterIntro') {
             this.levelIntroTimer -= this.deltaTime / 60;
             if (this.levelIntroTimer <= 0) {
-                Story.startChapter(this.currentChapter);
+                Story.startChapterIntro(this.currentChapter);
+                this.state = 'dialogue';
             }
         } else if (this.state === 'dialogue') {
-            Story.updateDialogue(this.deltaTime);
-        } else if (this.state === 'mamaScene') {
-            Story.updateMamaScene(this.deltaTime);
-        } else if (this.state === 'ending') {
-            Story.updateEnding(this.deltaTime);
+            Story.update(this.deltaTime);
         }
 
         this.render();
@@ -216,7 +213,6 @@ const Game = {
         Modes.update(dt);
         HUD.update(dt);
         Utils.updateScreenShake(dt);
-        Story.updateDistanceBeats(this.distance);
         Economy.check(this.currentLevel);
 
         this.checkCollisions();
@@ -493,6 +489,46 @@ const Game = {
         this.showLevelIntro();
     },
 
+    startLevel(levelIndex, chapter) {
+        this.state = 'playing';
+        this.currentLevel = levelIndex;
+        this.currentChapter = chapter !== undefined ? chapter : Math.floor(levelIndex / 2);
+        this.distance = 0;
+        this.scrollSpeed = 100;
+        this.targetScrollSpeed = 100;
+        this.nearMissCombo = 0;
+        this.nearMissTimer = 0;
+        this.tollBarrierSpawned = false;
+        this.bikeKeySpawned = false;
+        this.chalaanCompleted = false;
+        this.loadSheddingCompleted = false;
+        this.nextLoadSheddingAt = 0;
+        this.nextChalaanAt = 0;
+        Player.resetForNewLevel();
+        Obstacles.reset();
+        Levels.loadLevel(levelIndex, 0);
+        Camera.reset();
+        Particles.reset();
+        Modes.reset();
+        HUD.init();
+        this.hideAllScreens();
+        HUD.show();
+        this.showLevelIntro();
+    },
+
+    showChapterComplete(nextChapter) {
+        this.state = 'chapterComplete';
+        this.scrollSpeed = 0;
+        this.targetScrollSpeed = 0;
+        Audio.play('levelComplete');
+        SaveData.saveGameState();
+        document.getElementById('levelCompleteStats').innerHTML =
+            'Chapter ' + this.currentChapter + ' Complete!<br>' +
+            'Wallet: Rs. ' + Utils.formatRupees(Player.wallet);
+        this.showScreen('levelCompleteScreen');
+        HUD.hide();
+    },
+
     showLevelIntro() {
         const levelData = Levels.currentLevelData;
         if (!levelData) return;
@@ -504,12 +540,23 @@ const Game = {
         this.fadeDirection = 1;
     },
 
+    getChapterIntroText(chapter) {
+        const texts = [
+            'Ali ghar se nikalta hai.',
+            'GT Road ka safar shuru.',
+            'Islamabad — sheher-e-quwwat.',
+            'Murree — pahaadon ki godi.',
+            'Naran — jahan road khatam hoti hai.',
+        ];
+        return texts[chapter] || '';
+    },
+
     showChapterIntro(chapter) {
         const chapterInfo = this.chapterData[chapter];
         if (!chapterInfo) return;
         this.currentChapter = chapter;
         this.levelIntroText = 'Chapter ' + (chapter + 1) + ': ' + chapterInfo.name;
-        this.levelIntroSubtext = Story.getChapterIntroText(chapter);
+        this.levelIntroSubtext = this.getChapterIntroText(chapter);
         this.state = 'chapterIntro';
         this.levelIntroTimer = 3;
         this.fadeAlpha = 1;
@@ -624,7 +671,6 @@ const Game = {
                 );
             }, i * 50);
         }
-        Story.startEnding();
     },
 
     startBonusStage() {
@@ -660,7 +706,14 @@ const Game = {
             this.populateHighscore();
             HUD.hide();
         };
-        document.getElementById('btnNextLevel').onclick = () => this.startBonusStage();
+        document.getElementById('btnNextLevel').onclick = () => {
+            if (this.state === 'chapterComplete') {
+                // Go to next chapter
+                this.showChapterIntro(this.currentChapter + 1);
+            } else {
+                this.startBonusStage();
+            }
+        };
         document.getElementById('btnGarageContinue').onclick = () => Modes.closeGarage();
         document.getElementById('btnPause').onclick = () => { if (this.state === 'playing') this.pause(); else if (this.state === 'paused') this.resume(); };
         document.getElementById('btnQuit').onclick = () => {
@@ -688,6 +741,12 @@ const Game = {
             this.populateHighscore();
             HUD.hide();
         };
+        // Dialogue advancement on click/tap
+        this.canvas.addEventListener('click', () => {
+            if (this.state === 'dialogue') {
+                Story.advanceDialogue();
+            }
+        });
         this.populateHighscore();
     },
 
@@ -720,10 +779,8 @@ const Game = {
             Obstacles.render(ctx);
             Player.render(ctx);
             Story.renderDialogue(ctx);
-        } else if (this.state === 'mamaScene') {
-            Story.renderMamaScene(ctx);
         } else if (this.state === 'ending') {
-            Story.renderEnding(ctx);
+            Story.renderGameEnding(ctx);
             Particles.render(ctx);
         } else if (this.state === 'playing' || this.state === 'paused' || this.state === 'gameOver' || this.state === 'levelComplete') {
             Camera.render(ctx);

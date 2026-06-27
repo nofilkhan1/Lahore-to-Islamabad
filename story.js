@@ -279,7 +279,11 @@ const Story = {
         const intro = this.chapterIntros[chapterIndex];
         if (!intro) return;
         this.startScene(intro.dialogue, () => {
-            Game.startLevelFromChapter(chapterIndex);
+            // Start the first level of this chapter
+            const chapterData = Game.chapterData[chapterIndex];
+            if (chapterData && chapterData.levels.length > 0) {
+                Game.startLevel(chapterData.levels[0], chapterIndex);
+            }
         });
     },
 
@@ -293,10 +297,12 @@ const Story = {
                 Player.wallet += beat.bonus;
                 HUD.showMessage('+' + beat.bonus + ' bonus!', '#FFD700');
             }
-            if (beat.chapterComplete) {
+            if (beat.isFinale) {
+                Game.gameWon();
+            } else if (beat.chapterComplete) {
                 Game.showChapterComplete(beat.nextChapter);
             } else {
-                Game.showLevelComplete();
+                Game.levelComplete();
             }
         });
     },
